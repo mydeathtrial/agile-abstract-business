@@ -19,7 +19,7 @@
 您可以从[最新稳定版本]下载包(https://github.com/mydeathtrial/agile-abstract-business/releases).
 该包已上传至maven中央仓库，可在pom中直接声明引用
 
-以版本agile-abstract-business-0.0.1.jar为例。
+以版本agile-abstract-business-0.2.jar为例。
 #### 步骤 2: 添加maven依赖
 ```xml
 <!--声明中央仓库-->
@@ -33,7 +33,7 @@
 <dependency>
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-abstract-business</artifactId>
-    <version>0.0.1</version>
+    <version>0.2</version>
 </dependency>
 ```
 #### 步骤 3: 开箱即用

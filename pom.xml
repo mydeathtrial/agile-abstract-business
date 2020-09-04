@@ -6,7 +6,7 @@
 
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-abstract-business</artifactId>
-    <version>0.1</version>
+    <version>0.2</version>
     <description>print log for request</description>
     <url>https://github.com/mydeathtrial/agile-abstract-business</url>
 
