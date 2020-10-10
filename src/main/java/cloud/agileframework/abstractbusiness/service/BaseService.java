@@ -34,7 +34,7 @@ import java.util.function.Function;
  * @since 1.0
  */
 @AgileService
-@Mapping("/api/{model}")
+@Mapping("/${agile.module-name:api}/{model}")
 public class BaseService {
 
     @Autowired

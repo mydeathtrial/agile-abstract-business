@@ -39,6 +39,9 @@
 #### 步骤 3: 开箱即用
 组件生效条件有两个必要条件
 1. 使用agile-jpa组件托管持久层
+```properties
+agile.jpa.enable=true
+```
 2. 工程中能够扫描到对应的ORM实体
 以自定义ORM实体`MyTableEntity.class`为例
 + 实体，实体中可以声明hibernate-validate验证注解，用于增删改查验证，
