@@ -7,7 +7,7 @@
     <name>抽象业务扩展</name>
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-abstract-business</artifactId>
-    <version>0.0.1</version>
+    <version>2.0.5</version>
     <description>print log for request</description>
     <url>https://github.com/mydeathtrial/agile-abstract-business</url>
 
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-jpa</artifactId>
-            <version>2.0.1</version>
+            <version>2.0.5</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -80,17 +80,17 @@
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-generator</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.5</version>
         </dependency>
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-mvc</artifactId>
-            <version>2.0.1</version>
+            <version>2.0.5</version>
         </dependency>
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-security</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.5</version>
             <optional>true</optional>
         </dependency>
         <dependency>
