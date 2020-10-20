@@ -40,6 +40,6 @@ public class Test2Service {
     @Mapping(path = "/test4")
     public RETURN test4(String a) throws CreateFileException {
 
-        return RETURN.byMessage("asd","com.alibaba.druid.sql.parser.ParserException");
+        return RETURN.byMessageWithDefault("asd","com.alibaba.druid.sql.parser.ParserException");
     }
 }

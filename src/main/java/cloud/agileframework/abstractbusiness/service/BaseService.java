@@ -101,7 +101,7 @@ public class BaseService {
     public List<Object> query(String model) throws NoSuchRequestServiceException {
         return dataAsParam(model, data -> {
             if (data instanceof Class) {
-                return dao.findAll((Class) data);
+                return dao.findAllByClass((Class) data);
             }
             return dao.findAll(data);
         });
@@ -117,7 +117,7 @@ public class BaseService {
     @Validate(value = "size", nullable = false, isBlank = false)
     @Mapping(value = "/{page}/{size}", method = RequestMethod.GET)
     public Page<Class<?>> page(String model, int page, int size) throws NoSuchRequestServiceException {
-        return typeAsParam(model, data -> dao.findAll(data, getPageRequest(page, size)));
+        return typeAsParam(model, data -> dao.page(data, getPageRequest(page, size)));
     }
 
     public PageRequest getPageRequest(int page, int size) {
