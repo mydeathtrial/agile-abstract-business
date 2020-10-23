@@ -34,7 +34,7 @@ import java.util.function.Function;
  * @since 1.0
  */
 @AgileService
-@Mapping("/${agile.module-name:api}/{model}/default/")
+@Mapping("/${agile.module-name:api}/{model}/default")
 public class BaseService {
 
     @Autowired
@@ -52,7 +52,7 @@ public class BaseService {
         });
     }
 
-    public static <T> T dataAsParam(String model, Function<Object, T> function) throws NoSuchRequestServiceException {
+    private static <T> T dataAsParam(String model, Function<Object, T> function) throws NoSuchRequestServiceException {
         return typeAsParam(model, javaType -> {
             Object data = AgileParam.getInParam(javaType);
             if (data == null) {
@@ -62,7 +62,7 @@ public class BaseService {
         });
     }
 
-    public static <T> T typeAsParam(String model, Function<Class<?>, T> function) throws NoSuchRequestServiceException {
+    private static <T> T typeAsParam(String model, Function<Class<?>, T> function) throws NoSuchRequestServiceException {
         Optional<EntityType<?>> entityType = getEntityType(model);
         if (entityType.isPresent()) {
             Class<?> javaType = entityType.get().getJavaType();
@@ -120,13 +120,13 @@ public class BaseService {
         return typeAsParam(model, data -> dao.page(data, getPageRequest(page, size)));
     }
 
-    public PageRequest getPageRequest(int page, int size) {
+    private PageRequest getPageRequest(int page, int size) {
         return PageRequest.of(page - 1, size, getSort());
     }
 
     private static final String SORT_COLUMN = "sorts";
 
-    public Sort getSort() {
+    private Sort getSort() {
         Sort sort = Sort.unsorted();
         if (AgileParam.containsKey(SORT_COLUMN)) {
             List<String> columns = AgileParam.getInParamOfArray(SORT_COLUMN);
