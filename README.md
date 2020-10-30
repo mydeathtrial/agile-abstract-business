@@ -7,7 +7,7 @@
 通过抽象服务，为实体类提供自动化增删改查、分页、参数判断能力，添加该组建后，仅需ORM实体，不需要额外代码，即可
 
 * **旧Agile版本兼容**
-在2.0.0之前的版本中，agile-mvc提供了过时的MainService类作为旧AgileService代理服务层的基类，由于此方式代码
+在2.0.6之前的版本中，agile-mvc提供了过时的MainService类作为旧AgileService代理服务层的基类，由于此方式代码
 入侵率很高，所以新版agile-mvc中利用@AgileService注解形式完全取代MainService基类。将该类移植至此模块，后续
 高版本会删除。
 
