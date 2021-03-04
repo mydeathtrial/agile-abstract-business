@@ -7,7 +7,7 @@
     <name>agile-abstract-business</name>
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-abstract-business</artifactId>
-    <version>2.0.9</version>
+    <version>2.0.10</version>
     <description>print log for request</description>
     <url>https://github.com/mydeathtrial/agile-abstract-business</url>
 
@@ -69,9 +69,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-jpa</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.10</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -80,18 +85,18 @@
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-generator</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.10</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-mvc</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.10</version>
         </dependency>
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-security</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.10</version>
             <optional>true</optional>
         </dependency>
         <dependency>

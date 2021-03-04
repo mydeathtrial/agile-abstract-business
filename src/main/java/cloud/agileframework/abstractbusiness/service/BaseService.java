@@ -1,30 +1,37 @@
 package cloud.agileframework.abstractbusiness.service;
 
-import cloud.agileframework.common.constant.Constant;
+import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
+import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
+import cloud.agileframework.common.util.clazz.TypeReference;
+import cloud.agileframework.common.util.collection.SortInfo;
+import cloud.agileframework.common.util.collection.TreeBase;
+import cloud.agileframework.common.util.collection.TreeUtil;
+import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.common.util.string.StringUtil;
 import cloud.agileframework.jpa.dao.Dao;
-import cloud.agileframework.mvc.annotation.AgileService;
-import cloud.agileframework.mvc.annotation.Mapping;
+import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
 import cloud.agileframework.mvc.param.AgileParam;
+import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.BeanUtil;
-import cloud.agileframework.validate.ValidateCustomBusiness;
-import cloud.agileframework.validate.ValidateMsg;
-import cloud.agileframework.validate.ValidateUtil;
-import cloud.agileframework.validate.annotation.Validate;
-import cloud.agileframework.validate.group.Insert;
-import cloud.agileframework.validate.group.Update;
+import cloud.agileframework.spring.util.SecurityUtil;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.metamodel.EntityType;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author 佟盟
@@ -33,26 +40,43 @@ import java.util.function.Function;
  * @version 1.0
  * @since 1.0
  */
-@AgileService
-@Mapping("/${agile.module-name:api}/{model}/default")
+@Service
 public class BaseService {
 
     @Autowired
     private Dao dao;
 
-    @Validate(customBusiness = InsertValidateDo.class)
-    @Mapping(method = RequestMethod.POST)
+    @Transactional(rollbackFor = Exception.class)
     public void save(String model) throws NoSuchRequestServiceException {
-        dataAsParam(model, data -> {
-            if (data instanceof Class) {
-                throw new RuntimeException("not extract data of " + data);
-            }
-            dao.save(data);
-            return true;
-        });
+        dataAsParam(model, this::saveData);
     }
 
-    private static <T> T dataAsParam(String model, Function<Object, T> function) throws NoSuchRequestServiceException {
+    @Transactional(rollbackFor = Exception.class)
+    public boolean saveData(Object data) {
+        if (data instanceof Class) {
+            throw new RuntimeException("not extract data of " + data);
+        }
+        try {
+            Object v = dao.getId(data);
+            if (StringUtils.isBlank(String.valueOf(v))) {
+                dao.setId(data, null);
+            }
+            if (data instanceof IBaseEntity && ((IBaseEntity) data).getCreateUserId() == null) {
+                //赋予创建用户
+                UserDetails user = SecurityUtil.currentUser();
+                if (user instanceof CustomerUserDetails) {
+                    ((IBaseEntity) data).setCreateUserId(((CustomerUserDetails) user).id());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        dao.save(data);
+        return true;
+    }
+
+
+    public static <T> T dataAsParam(String model, Function<Object, T> function) throws NoSuchRequestServiceException {
         return typeAsParam(model, javaType -> {
             Object data = AgileParam.getInParam(javaType);
             if (data == null) {
@@ -71,79 +95,181 @@ public class BaseService {
         throw new NoSuchRequestServiceException();
     }
 
-    @Validate(value = "id", nullable = false, isBlank = false)
-    @Mapping(value = "/{id}", method = RequestMethod.DELETE)
+    private static void typeAsParam2(String model, Consumer<Class<?>> consumer) throws NoSuchRequestServiceException {
+        Optional<EntityType<?>> entityType = getEntityType(model);
+        if (entityType.isPresent()) {
+            Class<?> javaType = entityType.get().getJavaType();
+            consumer.accept(javaType);
+            return;
+        }
+        throw new NoSuchRequestServiceException();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void delete(String model, Object id) throws NoSuchRequestServiceException {
-        typeAsParam(model, javaType -> dao.deleteById(javaType, id));
+        typeAsParam(model, javaType -> deleteById(id, javaType));
     }
 
-    @Validate(value = "id", nullable = false, isBlank = false)
-    @Mapping(method = RequestMethod.DELETE)
-    public void delete(Object[] id, String model) throws NoSuchRequestServiceException {
-        typeAsParam(model, javaType -> {
-            dao.deleteInBatch(javaType, id);
-            return true;
-        });
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteById(Object id, Class<?> javaType) {
+        return dao.deleteById(javaType, id);
     }
 
-    @Validate(customBusiness = UpdateValidateDo.class)
-    @Mapping(method = RequestMethod.PUT)
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(@AgileInParam List<String> id, String model) throws NoSuchRequestServiceException {
+        typeAsParam(model, javaType -> deleteByIds(id, javaType));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteByIds(List<String> id, Class<?> javaType) {
+        dao.deleteInBatch(javaType, id);
+        return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void update(String model) throws NoSuchRequestServiceException {
-        dataAsParam(model, data -> {
-            if (data instanceof Class) {
-                throw new RuntimeException("not extract data of " + data);
-            }
-            return dao.saveOrUpdate(data);
-        });
+        dataAsParam(model, this::updateData);
     }
 
-    @Mapping(method = RequestMethod.GET)
-    public List<Object> query(String model) throws NoSuchRequestServiceException {
+    @Transactional(rollbackFor = Exception.class)
+    public Object updateData(Object data) {
+        if (data instanceof Class) {
+            throw new RuntimeException("not extract data of " + data);
+        }
+        //赋予创建用户
+        if (data instanceof IBaseEntity && ((IBaseEntity) data).getUpdateUserId() == null) {
+            UserDetails user = SecurityUtil.currentUser();
+            if (user instanceof CustomerUserDetails) {
+                ((IBaseEntity) data).setUpdateUserId(((CustomerUserDetails) user).id());
+            }
+        }
+        return dao.saveOrUpdate(data);
+    }
+
+    public <I extends BaseInParamVo> List<Object> list(String model, I inParam) throws NoSuchRequestServiceException {
         return dataAsParam(model, data -> {
             if (data instanceof Class) {
-                return dao.findAllByClass((Class) data);
+                return dao.findAllByClass((Class) data, toSort(inParam));
             }
-            return dao.findAll(data);
+            return dao.findAll(data, toSort(inParam));
         });
     }
 
-    @Validate(value = "id", nullable = false, isBlank = false)
-    @Mapping(value = "/{id}", method = RequestMethod.GET)
-    public Object queryById(String model, Object id) throws NoSuchRequestServiceException {
-        return typeAsParam(model, data -> dao.findOne(data, id));
-    }
-
-    @Validate(value = "page", nullable = false, isBlank = false)
-    @Validate(value = "size", nullable = false, isBlank = false)
-    @Mapping(value = "/{page}/{size}", method = RequestMethod.GET)
-    public Page<Class<?>> page(String model, int page, int size) throws NoSuchRequestServiceException {
-        return typeAsParam(model, data -> dao.page(data, getPageRequest(page, size)));
-    }
-
-    private PageRequest getPageRequest(int page, int size) {
-        return PageRequest.of(page - 1, size, getSort());
-    }
-
-    private static final String SORT_COLUMN = "sorts";
-
-    private Sort getSort() {
-        Sort sort = Sort.unsorted();
-        if (AgileParam.containsKey(SORT_COLUMN)) {
-            List<String> columns = AgileParam.getInParamOfArray(SORT_COLUMN);
-            List<Sort.Order> orders = new ArrayList<>(columns.size());
-            for (String column : columns) {
-                if (column.startsWith(Constant.RegularAbout.MINUS)) {
-                    orders.add(new Sort.Order(Sort.Direction.DESC, column));
-                } else {
-                    orders.add(new Sort.Order(Sort.Direction.ASC, column));
-                }
-
-            }
-            sort = Sort.by(orders);
+    public <I extends BaseInParamVo> List<?> list(Class<?> entityClass, I inParam) {
+        Object data = ObjectUtil.to(inParam, new TypeReference<>(entityClass));
+        if (data == null) {
+            return dao.findAllByClass(entityClass, toSort(inParam));
         }
-        return sort;
+        return dao.findAll(data, toSort(inParam));
     }
 
+    <I extends BaseInParamVo> Sort toSort(I inParam) {
+        if (inParam == null) {
+            return Sort.unsorted();
+        }
+        List<SortInfo> sorts = inParam.getSortColumn();
+
+        if(sorts == null){
+            return Sort.unsorted();
+        }
+        List<Sort.Order> s = sorts.stream().map(sortInfo -> {
+            if (sortInfo.isSort()) {
+                return Sort.Order.desc(sortInfo.getProperty());
+            }
+            return Sort.Order.asc(sortInfo.getProperty());
+        }).collect(Collectors.toList());
+        return Sort.by(s);
+    }
+
+    public Object queryById(String model, Object id) throws NoSuchRequestServiceException {
+        return typeAsParam(model, data -> queryById(data, id));
+    }
+
+    public Object queryById(Class<?> data, Object id) {
+        return dao.findOne(data, id);
+    }
+
+    public <I extends BaseInParamVo> Page<? extends Object> page(String model, I inParam) throws NoSuchRequestServiceException {
+        return typeAsParam(model, data -> {
+            PageRequest pageRequest = PageRequest.of(
+                    inParam.getPageNum() - 1,
+                    inParam.getPageSize(),
+                    toSort(inParam));
+
+            Object dto = AgileParam.getInParam(data);
+            if (dto != null) {
+                return dao.page(dto, pageRequest);
+            }
+            return dao.page(data, pageRequest);
+        });
+    }
+
+
+    public <I extends BaseInParamVo> Page<?> page(Class<?> entityClass, I inParam) {
+        Object data = ObjectUtil.to(inParam, new TypeReference<>(entityClass));
+
+        PageRequest pageRequest = PageRequest.of(
+                inParam.getPageNum() - 1,
+                inParam.getPageSize(),
+                toSort(inParam));
+
+        if (data == null) {
+            return dao.page(entityClass, pageRequest);
+        }
+        return dao.page(data, pageRequest);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void clean(String model) throws NoSuchRequestServiceException {
+        typeAsParam2(model, this::clean);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void clean(Class<?> data) {
+        dao.deleteAllInBatch(data);
+    }
+
+    @Value("${agile.base-service.tree.root-id:-1}")
+    private String root;
+
+    public Object tree(String model) throws NoSuchRequestServiceException {
+        return dataAsParam(model, data -> {
+            List<?> all;
+            if (data instanceof Class && TreeBase.class.isAssignableFrom((Class<?>) data)) {
+                all = dao.findAllByClass((Class<?>) data);
+            } else if (data != null && TreeBase.class.isAssignableFrom(data.getClass())) {
+                all = dao.findAll(data);
+            } else {
+                all = Lists.newArrayList();
+            }
+
+            try {
+                return TreeUtil.createTree(all, "id",
+                        "parentId",
+                        "children",
+                        "sort",
+                        root,
+                        null);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            return Lists.newArrayList();
+        });
+    }
+
+    public List<?> tree(List<? extends TreeBase> all) {
+        try {
+            return TreeUtil.createTree(all, "id",
+                    "parentId",
+                    "children",
+                    "sort",
+                    root,
+                    null);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return Lists.newArrayList();
+    }
 
     /**
      * 根据访问的模型，遍历查找对应的orm类，用于后续处理
@@ -162,47 +288,5 @@ public class BaseService {
                 .stream()
                 .filter(n -> n.getName().equalsIgnoreCase(StringUtil.toUpperName(model)))
                 .findFirst();
-    }
-
-    /**
-     * 验证录入
-     */
-    public static class InsertValidateDo implements ValidateCustomBusiness {
-
-        @Override
-        public List<ValidateMsg> validate(Object params) {
-            String model = AgileParam.getInParam("model", String.class);
-            try {
-                return dataAsParam(model, data -> {
-                    if (data instanceof Class) {
-                        return null;
-                    }
-                    return ValidateUtil.validate(data, Insert.class);
-                });
-            } catch (NoSuchRequestServiceException e) {
-                return new ArrayList<>(0);
-            }
-        }
-    }
-
-    /**
-     * 验证录入
-     */
-    public static class UpdateValidateDo implements ValidateCustomBusiness {
-
-        @Override
-        public List<ValidateMsg> validate(Object params) {
-            String model = AgileParam.getInParam("model", String.class);
-            try {
-                return dataAsParam(model, data -> {
-                    if (data instanceof Class) {
-                        return null;
-                    }
-                    return ValidateUtil.validate(data, Update.class);
-                });
-            } catch (NoSuchRequestServiceException e) {
-                return new ArrayList<>(0);
-            }
-        }
     }
 }

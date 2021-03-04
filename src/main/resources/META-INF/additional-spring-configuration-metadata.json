@@ -1,0 +1,60 @@
+{
+  "properties": [
+    {
+      "name": "agile.base-service.rootPath",
+      "type": "java.lang.String",
+      "description": "保存."
+    },
+    {
+      "name": "agile.base-service.save",
+      "type": "java.lang.String",
+      "description": "保存."
+    },
+    {
+      "name": "agile.base-service.deleteById",
+      "type": "java.lang.String",
+      "description": "根据主键删除."
+    },
+    {
+      "name": "agile.base-service.deleteByIds",
+      "type": "java.lang.String",
+      "description": "根据主键集合删除."
+    },
+    {
+      "name": "agile.base-service.update",
+      "type": "java.lang.String",
+      "description": "更新."
+    },
+    {
+      "name": "agile.base-service.query",
+      "type": "java.lang.String",
+      "description": "查询."
+    },
+    {
+      "name": "agile.base-service.queryById",
+      "type": "java.lang.String",
+      "description": "查询."
+    },
+    {
+      "name": "agile.base-service.page",
+      "type": "java.lang.String",
+      "description": "分页."
+    },
+    {
+      "name": "agile.base-service.tree",
+      "type": "java.lang.String",
+      "description": "树."
+    },
+    {
+      "name": "agile.base-service.tree.root-id",
+      "type": "java.lang.String",
+      "description": "根节点id值",
+      "defaultValue": "-1"
+    },
+    {
+      "name": "agile.base-service.clean",
+      "type": "java.lang.String",
+      "description": "清空"
+    }
+  ]
+}

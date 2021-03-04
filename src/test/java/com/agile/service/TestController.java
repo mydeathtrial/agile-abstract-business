@@ -1,7 +1,12 @@
 package com.agile.service;
 
+import cloud.agileframework.abstractbusiness.controller.BaseController;
+import cloud.agileframework.abstractbusiness.service.BaseService;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileReturn;
+import com.agile.entity.InVo;
+import com.agile.entity.OutVo;
+import com.agile.entity.SysApiEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -13,20 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * @since 1.0
  */
 @Controller
-public class TestController {
-    /**
-     * 描述：
-     * @author 佟盟
-     * @date 2020/9/00004 13:40
-    */
-    @RequestMapping(path = "/test6")
-    public Tudo test(String a) {
-        AgileReturn.add("a",a);
-        AgileReturn.setHead(RETURN.EXPRESSION);
-        return new Tudo();
-    }
+@RequestMapping("/api/SysApiEntity")
+public class TestController extends BaseController<SysApiEntity, InVo, OutVo>{
 
-    public class Tudo{
-
-    }
 }
