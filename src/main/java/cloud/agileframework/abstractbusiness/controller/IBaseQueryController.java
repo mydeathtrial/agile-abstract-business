@@ -1,9 +1,7 @@
 package cloud.agileframework.abstractbusiness.controller;
 
-import cloud.agileframework.abstractbusiness.pojo.entity.BaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
-import cloud.agileframework.abstractbusiness.pojo.vo.BaseOutParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.clazz.ClassUtil;
@@ -17,7 +15,6 @@ import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
-import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author 佟盟
@@ -37,7 +33,7 @@ import java.util.stream.Stream;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends IBaseController<E,O> {
+public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends IBaseController<E, O> {
     /**
      * 列表查询
      *
@@ -55,10 +51,22 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
         return RETURN.SUCCESS;
     }
 
+    /**
+     * 集合转换成OutVo
+     *
+     * @param list 响应数据集合
+     * @return OutVo类型响应数据
+     */
     default List<Object> toOutVo(List<?> list) {
         return list.stream().map(this::toSingleOutVo).collect(Collectors.toList());
     }
 
+    /**
+     * 单个对象转换成OutVo类型
+     *
+     * @param n 单个对象
+     * @return 返回值
+     */
     default Object toSingleOutVo(Object n) {
         final TypeReference<?> typeReference = new TypeReference<>(getOutVoClass());
         Object o = ObjectUtil.to(n, typeReference);
@@ -81,7 +89,7 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
     default RETURN page(@AgileInParam I inParam) {
         validate(inParam, PageQuery.class);
         Page<?> page = service().page(getEntityClass(), inParam);
-        PageImpl<?> result = new PageImpl<>(toOutVo(page.getContent()),page.getPageable(),page.getTotalElements());
+        PageImpl<?> result = new PageImpl<>(toOutVo(page.getContent()), page.getPageable(), page.getTotalElements());
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
     }
@@ -95,14 +103,14 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
     @SneakyThrows
     @RequestMapping(value = "${agile.base-service.tree:/tree}", method = {RequestMethod.GET, RequestMethod.POST})
     default RETURN tree(@AgileInParam I inParam) {
-        if (!TreeBase.class.isAssignableFrom(getEntityClass())){
+        if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
         }
         validate(inParam, Query.class);
 
         List<?> list = service().list(getEntityClass(), inParam);
 
-        if(!TreeBase.class.isAssignableFrom(getOutVoClass())){
+        if (!TreeBase.class.isAssignableFrom(getOutVoClass())) {
             throw new RuntimeException("your out vo class must is TreeBase subclass");
         }
 

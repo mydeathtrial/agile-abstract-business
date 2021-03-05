@@ -169,7 +169,7 @@ public class BaseService {
         }
         List<SortInfo> sorts = inParam.getSortColumn();
 
-        if(sorts == null){
+        if (sorts == null) {
             return Sort.unsorted();
         }
         List<Sort.Order> s = sorts.stream().map(sortInfo -> {
@@ -189,7 +189,7 @@ public class BaseService {
         return dao.findOne(data, id);
     }
 
-    public <I extends BaseInParamVo> Page<? extends Object> page(String model, I inParam) throws NoSuchRequestServiceException {
+    public <I extends BaseInParamVo> Page<Object> page(String model, I inParam) throws NoSuchRequestServiceException {
         return typeAsParam(model, data -> {
             PageRequest pageRequest = PageRequest.of(
                     inParam.getPageNum() - 1,

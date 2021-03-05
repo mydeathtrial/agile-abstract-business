@@ -1,14 +1,9 @@
 package cloud.agileframework.abstractbusiness.controller;
 
-import cloud.agileframework.abstractbusiness.pojo.entity.BaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
-import cloud.agileframework.abstractbusiness.pojo.vo.BaseOutParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.abstractbusiness.service.BaseService;
-import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.base.RETURN;
-import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,21 +17,28 @@ import java.util.List;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseDeleteController<E extends IBaseEntity,O extends IBaseOutParamVo> extends IBaseController<E,O> {
+public interface IBaseDeleteController<E extends IBaseEntity, O extends IBaseOutParamVo> extends IBaseController<E, O> {
+
+    String ID = "id";
+
     /**
      * 根据主键删除
+     *
      * @param id 主键
+     * @return 响应
      */
-    @Validate(value = "id", nullable = false)
+    @Validate(value = ID, nullable = false)
     @DeleteMapping(value = {"${agile.base-service.deleteById:/{id}}"})
-    default RETURN delete(@PathVariable("id") String id) {
+    default RETURN delete(@PathVariable(ID) String id) {
         service().deleteById(id, getEntityClass());
         return RETURN.SUCCESS;
     }
 
     /**
      * 根据主键集合批量删除数据
+     *
      * @param ids 主键集合
+     * @return 响应
      */
     @Validate(nullable = false)
     @DeleteMapping(value = {"${agile.base-service.deleteByIds:}"})
@@ -47,6 +49,8 @@ public interface IBaseDeleteController<E extends IBaseEntity,O extends IBaseOutP
 
     /**
      * 清空表
+     *
+     * @return 响应
      */
     @DeleteMapping(value = {"${agile.base-service.clean:/all}"})
     default RETURN clean() {

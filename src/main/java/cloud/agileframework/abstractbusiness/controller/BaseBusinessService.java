@@ -181,7 +181,7 @@ public class BaseBusinessService {
                     if (data instanceof Class) {
                         return null;
                     }
-                    return ValidateUtil.validate(data, Default.class,Insert.class);
+                    return ValidateUtil.validate(data, Default.class, Insert.class);
                 });
             } catch (NoSuchRequestServiceException e) {
                 return new ArrayList<>(0);
@@ -202,7 +202,7 @@ public class BaseBusinessService {
                     if (data instanceof Class) {
                         return null;
                     }
-                    return ValidateUtil.validate(data, Default.class,Update.class);
+                    return ValidateUtil.validate(data, Default.class, Update.class);
                 });
             } catch (NoSuchRequestServiceException e) {
                 return new ArrayList<>(0);

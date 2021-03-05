@@ -48,13 +48,13 @@
     {
       "name": "agile.base-service.tree.root-id",
       "type": "java.lang.String",
-      "description": "根节点id值",
+      "description": "根节点id值.",
       "defaultValue": "-1"
     },
     {
       "name": "agile.base-service.clean",
       "type": "java.lang.String",
-      "description": "清空"
+      "description": "清空."
     }
   ]
 }

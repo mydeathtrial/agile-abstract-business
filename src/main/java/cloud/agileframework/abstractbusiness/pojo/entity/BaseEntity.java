@@ -1,7 +1,5 @@
 package cloud.agileframework.abstractbusiness.pojo.entity;
 
-import com.alibaba.fastjson.annotation.JSONType;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,9 +27,10 @@ import java.util.Date;
 @MappedSuperclass
 @Setter
 @SuperBuilder
-public class BaseEntity implements IBaseEntity,Serializable {
+public class BaseEntity implements IBaseEntity, Serializable {
     public BaseEntity() {
     }
+
     private Long id;
     private Long createUserId;
     private Date createTime;

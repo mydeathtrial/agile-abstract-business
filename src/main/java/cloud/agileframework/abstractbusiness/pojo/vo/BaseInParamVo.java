@@ -2,7 +2,6 @@ package cloud.agileframework.abstractbusiness.pojo.vo;
 
 import cloud.agileframework.common.util.collection.SortInfo;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.io.Serializable;

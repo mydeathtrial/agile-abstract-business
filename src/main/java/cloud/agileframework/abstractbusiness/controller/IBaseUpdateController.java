@@ -23,6 +23,7 @@ public interface IBaseUpdateController<E extends IBaseEntity, O extends IBaseOut
      * 更新
      *
      * @param entity 实体
+     * @return 响应
      */
     @SneakyThrows
     @Validate(value = "id", nullable = false)

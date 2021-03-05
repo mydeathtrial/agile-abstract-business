@@ -1,9 +1,7 @@
 package cloud.agileframework.abstractbusiness.controller;
 
-import cloud.agileframework.abstractbusiness.pojo.entity.BaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
-import cloud.agileframework.abstractbusiness.pojo.vo.BaseOutParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.abstractbusiness.service.BaseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +16,9 @@ import java.lang.reflect.ParameterizedType;
  * @since 1.0
  */
 public class BaseController<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> implements
-        IBaseSaveController<E,O>,
-        IBaseDeleteController<E,O>,
-        IBaseUpdateController<E,O>,
+        IBaseSaveController<E, O>,
+        IBaseDeleteController<E, O>,
+        IBaseUpdateController<E, O>,
         IBaseQueryController<E, I, O> {
 
     @Autowired

@@ -1,7 +1,6 @@
 package cloud.agileframework.abstractbusiness.controller;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
-import cloud.agileframework.abstractbusiness.pojo.vo.BaseOutParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.abstractbusiness.service.BaseService;
 import cloud.agileframework.common.constant.Constant;
@@ -19,7 +18,7 @@ import java.util.List;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseController<E extends IBaseEntity,O extends IBaseOutParamVo> {
+public interface IBaseController<E extends IBaseEntity, O extends IBaseOutParamVo> {
     /**
      * 取基础服务
      *
@@ -34,6 +33,11 @@ public interface IBaseController<E extends IBaseEntity,O extends IBaseOutParamVo
      */
     Class<E> getEntityClass();
 
+    /**
+     * 获取出参的vo类
+     *
+     * @return 出参vo类型
+     */
     Class<O> getOutVoClass();
 
     /**

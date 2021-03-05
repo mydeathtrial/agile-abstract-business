@@ -1,10 +1,8 @@
 package cloud.agileframework.abstractbusiness.pojo.vo;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.Date;
 
 /**
