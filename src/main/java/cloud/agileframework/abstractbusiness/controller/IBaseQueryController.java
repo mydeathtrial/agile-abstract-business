@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -115,7 +116,7 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
         }
 
         List<?> result = toOutVo(list);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, service().tree((List<? extends TreeBase>) result));
+        AgileReturn.add(Constant.ResponseAbout.RESULT, service().tree(new ArrayList(result)));
         return RETURN.SUCCESS;
     }
 

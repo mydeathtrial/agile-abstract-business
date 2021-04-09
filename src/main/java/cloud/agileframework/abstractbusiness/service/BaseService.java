@@ -16,6 +16,7 @@ import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.spring.util.SecurityUtil;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,8 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.metamodel.EntityType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -234,41 +238,26 @@ public class BaseService {
 
     public Object tree(String model) throws NoSuchRequestServiceException {
         return dataAsParam(model, data -> {
-            List<?> all;
+            List<? extends TreeBase<String>> all;
             if (data instanceof Class && TreeBase.class.isAssignableFrom((Class<?>) data)) {
-                all = dao.findAllByClass((Class<?>) data);
+                all = new ArrayList(dao.findAllByClass((Class<?>) data));
             } else if (data != null && TreeBase.class.isAssignableFrom(data.getClass())) {
-                all = dao.findAll(data);
+                all = new ArrayList(dao.findAll(data));
             } else {
                 all = Lists.newArrayList();
             }
 
-            try {
-                return TreeUtil.createTree(all, "id",
-                        "parentId",
-                        "children",
-                        "sort",
-                        root,
-                        null);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-            return Lists.newArrayList();
+            return TreeUtil.createTree(all,
+                    root,
+                    null);
         });
     }
 
-    public List<?> tree(List<? extends TreeBase> all) {
-        try {
-            return TreeUtil.createTree(all, "id",
-                    "parentId",
-                    "children",
-                    "sort",
-                    root,
-                    null);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return Lists.newArrayList();
+    public SortedSet<? extends TreeBase<String>> tree(List<? extends TreeBase<String>> all) {
+        return TreeUtil.createTree(all,
+                root,
+                null);
+
     }
 
     /**
