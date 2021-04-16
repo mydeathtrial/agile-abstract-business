@@ -16,7 +16,6 @@ import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.spring.util.SecurityUtil;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -236,9 +234,9 @@ public class BaseService {
     @Value("${agile.base-service.tree.root-id:-1}")
     private String root;
 
-    public Object tree(String model) throws NoSuchRequestServiceException {
+    public <A extends TreeBase<String, A>> Object tree(String model) throws NoSuchRequestServiceException {
         return dataAsParam(model, data -> {
-            List<? extends TreeBase<String>> all;
+            List<A> all;
             if (data instanceof Class && TreeBase.class.isAssignableFrom((Class<?>) data)) {
                 all = new ArrayList(dao.findAllByClass((Class<?>) data));
             } else if (data != null && TreeBase.class.isAssignableFrom(data.getClass())) {
@@ -253,7 +251,7 @@ public class BaseService {
         });
     }
 
-    public SortedSet<? extends TreeBase<String>> tree(List<? extends TreeBase<String>> all) {
+    public <A extends TreeBase<String, A>> SortedSet<A> tree(List<A> all) {
         return TreeUtil.createTree(all,
                 root,
                 null);
