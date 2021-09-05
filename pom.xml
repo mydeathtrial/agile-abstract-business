@@ -31,7 +31,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
-        <spring-boot.version>2.4.0-M1</spring-boot.version>
+        <spring-boot.version>2.5.4</spring-boot.version>
     </properties>
 
     <developers>
@@ -76,6 +76,11 @@
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-jpa</artifactId>
+            <version>2.1.0.M5</version>
+        </dependency>
+        <dependency>
+            <groupId>cloud.agileframework</groupId>
+            <artifactId>agile-validate</artifactId>
             <version>2.1.0.M5</version>
         </dependency>
         <dependency>
