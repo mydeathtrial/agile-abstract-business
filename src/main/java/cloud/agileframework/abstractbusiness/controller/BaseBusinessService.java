@@ -174,7 +174,7 @@ public class BaseBusinessService {
     public static class InsertValidateDo implements ValidateCustomBusiness {
 
         @Override
-        public List<ValidateMsg> validate(Object params) {
+        public List<ValidateMsg> validate(String key, Object params) {
             String model = AgileParam.getInParam(MODEL, String.class);
             try {
                 return BaseService.dataAsParam(model, data -> {
@@ -195,7 +195,7 @@ public class BaseBusinessService {
     public static class UpdateValidateDo implements ValidateCustomBusiness {
 
         @Override
-        public List<ValidateMsg> validate(Object params) {
+        public List<ValidateMsg> validate(String key, Object params) {
             String model = AgileParam.getInParam(MODEL, String.class);
             try {
                 return BaseService.dataAsParam(model, data -> {
