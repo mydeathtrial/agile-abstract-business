@@ -10,12 +10,6 @@ import java.util.Date;
  * @since 1.0
  */
 public interface IBaseEntity {
-    /**
-     * 取主键
-     *
-     * @return 主键
-     */
-    Long getId();
 
     /**
      * 取创建人主键
@@ -46,32 +40,11 @@ public interface IBaseEntity {
     Date getUpdateTime();
 
     /**
-     * 取是否启用
-     *
-     * @return 是否启用
-     */
-    Integer getIsEnabled();
-
-    /**
      * 取是否删除
      *
      * @return 是否删除
      */
-    Integer getDelFlag();
-
-    /**
-     * 取乐观锁版本号
-     *
-     * @return 乐观锁版本号
-     */
-    Integer getVersion();
-
-    /**
-     * 设置主键
-     *
-     * @param id 主键
-     */
-    void setId(Long id);
+    Boolean getDelete();
 
     /**
      * 设置创建人主键
@@ -102,23 +75,9 @@ public interface IBaseEntity {
     void setUpdateTime(Date updateTime);
 
     /**
-     * 是否启用
-     *
-     * @param isEnable 是否启用
-     */
-    void setIsEnabled(Integer isEnable);
-
-    /**
      * 是否已删除
      *
      * @param delFlag 是否已删除
      */
-    void setDelFlag(Integer delFlag);
-
-    /**
-     * 设置乐观锁
-     *
-     * @param version 版本
-     */
-    void setVersion(Integer version);
+    void setDelete(Boolean delFlag);
 }

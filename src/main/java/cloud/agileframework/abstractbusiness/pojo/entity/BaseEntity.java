@@ -36,22 +36,11 @@ public class BaseEntity implements IBaseEntity, Serializable {
     private Date createTime;
     private Long updateUserId;
     private Date updateTime;
-    private Integer isEnabled = 1;
-    private Integer delFlag = 0;
-    private Integer version;
-
-    @Override
-    @Column(name = "`id`", length = 20, nullable = false)
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "custom-id")
-    @GenericGenerator(name = "custom-id", strategy = "cloud.agileframework.jpa.dao.IDGenerator")
-    public Long getId() {
-        return id;
-    }
+    private Boolean delete = false;
 
     @Override
     @Basic
-    @Column(name = "create_user_id", length = 20)
+    @Column(name = "create_user", length = 20)
     public Long getCreateUserId() {
         return createUserId;
     }
@@ -59,46 +48,32 @@ public class BaseEntity implements IBaseEntity, Serializable {
     @Override
     @Temporal(value = TemporalType.TIMESTAMP)
     @Basic
-    @Column(name = "create_time", updatable = false)
     @CreationTimestamp
+    @Column(name = "create_time", updatable = false, insertable = false)
     public Date getCreateTime() {
         return createTime;
     }
 
     @Override
     @Basic
-    @Column(name = "update_user_id", length = 20)
+    @Column(name = "update_user", length = 20)
     public Long getUpdateUserId() {
         return updateUserId;
     }
 
     @Override
     @Temporal(value = TemporalType.TIMESTAMP)
+    @Column(name = "update_time", updatable = false, insertable = false)
     @UpdateTimestamp
     @Basic
-    @Column(name = "update_time")
     public Date getUpdateTime() {
         return updateTime;
     }
 
     @Override
-    @Column(name = "is_enabled", length = 11)
     @Basic
-    public Integer getIsEnabled() {
-        return isEnabled;
-    }
-
-    @Override
-    @Basic
-    @Column(name = "del_flag", length = 11, insertable = false, updatable = false)
-    public Integer getDelFlag() {
-        return delFlag;
-    }
-
-    @Override
-    @Basic
-    @Column(name = "`version`", length = 11)
-    public Integer getVersion() {
-        return version;
+    @Column(name = "delete", length = 1, updatable = false, insertable = false)
+    public Boolean getDelete() {
+        return delete;
     }
 }
