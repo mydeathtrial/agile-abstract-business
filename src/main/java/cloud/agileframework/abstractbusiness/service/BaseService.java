@@ -12,21 +12,20 @@ import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
 import cloud.agileframework.mvc.param.AgileParam;
-import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.BeanUtil;
-import cloud.agileframework.spring.util.SecurityUtil;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.metamodel.EntityType;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -48,35 +47,8 @@ public class BaseService {
     @Autowired
     private Dao dao;
 
-    @Transactional(rollbackFor = Exception.class)
-    public void save(String model) throws NoSuchRequestServiceException {
-        dataAsParam(model, this::saveData);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public boolean saveData(Object data) {
-        if (data instanceof Class) {
-            throw new RuntimeException("not extract data of " + data);
-        }
-        try {
-            Object v = dao.getId(data);
-            if (StringUtils.isBlank(String.valueOf(v))) {
-                dao.setId(data, null);
-            }
-            if (data instanceof IBaseEntity && ((IBaseEntity) data).getCreateUserId() == null) {
-                //赋予创建用户
-                UserDetails user = SecurityUtil.currentUser();
-                if (user instanceof CustomerUserDetails) {
-                    ((IBaseEntity) data).setCreateUserId(((CustomerUserDetails) user).id());
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        dao.save(data);
-        return true;
-    }
-
+    @Autowired
+    private ISecurityService security;
 
     public static <T> T dataAsParam(String model, Function<Object, T> function) throws NoSuchRequestServiceException {
         return typeAsParam(model, javaType -> {
@@ -107,6 +79,47 @@ public class BaseService {
         throw new NoSuchRequestServiceException();
     }
 
+    /**
+     * 根据访问的模型，遍历查找对应的orm类，用于后续处理
+     *
+     * @param model 模型名字
+     * @return orm类
+     */
+    private static Optional<EntityType<?>> getEntityType(String model) {
+        Dao dao = BeanUtil.getBean(Dao.class);
+        if (dao == null) {
+            throw new RuntimeException("not found Dao bean");
+        }
+        return dao.getEntityManager().getEntityManagerFactory()
+                .getMetamodel()
+                .getEntities()
+                .stream()
+                .filter(n -> n.getName().equalsIgnoreCase(StringUtil.toUpperName(model)))
+                .findFirst();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Object save(String model) throws NoSuchRequestServiceException {
+        return dataAsParam(model, this::saveData);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public <A> A saveData(A data) {
+        if (data instanceof Class) {
+            throw new RuntimeException("not extract data of " + data);
+        }
+        Object v = dao.getId(data);
+        if (StringUtils.isBlank(String.valueOf(v))) {
+            dao.setId(data, null);
+        }
+        if (data instanceof IBaseEntity && ((IBaseEntity) data).getCreateUser() == null) {
+            //赋予创建用户
+            ((IBaseEntity) data).setCreateUser(security.currentUser());
+        }
+
+        return dao.saveAndReturn(data);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void delete(String model, Object id) throws NoSuchRequestServiceException {
         typeAsParam(model, javaType -> deleteById(id, javaType));
@@ -129,21 +142,19 @@ public class BaseService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void update(String model) throws NoSuchRequestServiceException {
-        dataAsParam(model, this::updateData);
+    public Object update(String model) throws NoSuchRequestServiceException {
+        return dataAsParam(model, this::updateData);
     }
 
+    @SneakyThrows
     @Transactional(rollbackFor = Exception.class)
-    public Object updateData(Object data) {
+    public <A> A updateData(A data) {
         if (data instanceof Class) {
             throw new RuntimeException("not extract data of " + data);
         }
         //赋予创建用户
-        if (data instanceof IBaseEntity && ((IBaseEntity) data).getUpdateUserId() == null) {
-            UserDetails user = SecurityUtil.currentUser();
-            if (user instanceof CustomerUserDetails) {
-                ((IBaseEntity) data).setUpdateUserId(((CustomerUserDetails) user).id());
-            }
+        if (data instanceof IBaseEntity && ((IBaseEntity) data).getUpdateUser() == null) {
+            ((IBaseEntity) data).setUpdateUser(security.currentUser());
         }
         return dao.saveOrUpdate(data);
     }
@@ -206,7 +217,6 @@ public class BaseService {
         });
     }
 
-
     public <I extends BaseInParamVo> Page<?> page(Class<?> entityClass, I inParam) {
         Object data = ObjectUtil.to(inParam, new TypeReference<>(entityClass));
 
@@ -231,49 +241,35 @@ public class BaseService {
         dao.deleteAllInBatch(data);
     }
 
-    @Value("${agile.base-service.tree.root-id:-1}")
-    private String root;
-
-    public <A extends TreeBase<String, A>> Object tree(String model) throws NoSuchRequestServiceException {
+    public <I extends Serializable, A extends TreeBase<I, A>> SortedSet<A> tree(String model) throws NoSuchRequestServiceException {
         return dataAsParam(model, data -> {
             List<A> all;
+            Class<A> entityClass;
             if (data instanceof Class && TreeBase.class.isAssignableFrom((Class<?>) data)) {
-                all = new ArrayList(dao.findAllByClass((Class<?>) data));
+                all = new ArrayList<>(dao.findAllByClass((Class<A>) data));
+                entityClass = (Class<A>) data;
             } else if (data != null && TreeBase.class.isAssignableFrom(data.getClass())) {
                 all = new ArrayList(dao.findAll(data));
+                entityClass = (Class<A>) data.getClass();
             } else {
-                all = Lists.newArrayList();
+                return Sets.newTreeSet();
             }
-
+            I rootParentId = null;
+            try {
+                rootParentId = (I) entityClass.getMethod("rootParentId").invoke(null);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                e.printStackTrace();
+            }
             return TreeUtil.createTree(all,
-                    root,
+                    rootParentId,
                     null);
         });
     }
 
-    public <A extends TreeBase<String, A>> SortedSet<A> tree(List<A> all) {
+    public <I extends Serializable, A extends TreeBase<I, A>> SortedSet<A> tree(List<A> all, I rootParentId) {
         return TreeUtil.createTree(all,
-                root,
+                rootParentId,
                 null);
 
-    }
-
-    /**
-     * 根据访问的模型，遍历查找对应的orm类，用于后续处理
-     *
-     * @param model 模型名字
-     * @return orm类
-     */
-    private static Optional<EntityType<?>> getEntityType(String model) {
-        Dao dao = BeanUtil.getBean(Dao.class);
-        if (dao == null) {
-            throw new RuntimeException("not found Dao bean");
-        }
-        return dao.getEntityManager().getEntityManagerFactory()
-                .getMetamodel()
-                .getEntities()
-                .stream()
-                .filter(n -> n.getName().equalsIgnoreCase(StringUtil.toUpperName(model)))
-                .findFirst();
     }
 }

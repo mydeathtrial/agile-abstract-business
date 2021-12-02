@@ -4,10 +4,7 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
-import cloud.agileframework.common.util.clazz.ClassUtil;
-import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.collection.TreeBase;
-import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
@@ -23,9 +20,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author 佟盟
@@ -47,34 +45,9 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
         validate(inParam, Query.class);
         List<?> list = service().list(getEntityClass(), inParam);
 
-        List<Object> result = toOutVo(list);
+        List<O> result = toOutVo(list);
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
-    }
-
-    /**
-     * 集合转换成OutVo
-     *
-     * @param list 响应数据集合
-     * @return OutVo类型响应数据
-     */
-    default List<Object> toOutVo(List<?> list) {
-        return list.stream().map(this::toSingleOutVo).collect(Collectors.toList());
-    }
-
-    /**
-     * 单个对象转换成OutVo类型
-     *
-     * @param n 单个对象
-     * @return 返回值
-     */
-    default Object toSingleOutVo(Object n) {
-        final TypeReference<?> typeReference = new TypeReference<>(getOutVoClass());
-        Object o = ObjectUtil.to(n, typeReference);
-        if (o == null) {
-            return ClassUtil.newInstance(getOutVoClass());
-        }
-        return o;
     }
 
     /**
@@ -103,7 +76,7 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
      */
     @SneakyThrows
     @RequestMapping(value = "${agile.base-service.tree:/tree}", method = {RequestMethod.GET, RequestMethod.POST})
-    default RETURN tree(@AgileInParam I inParam) {
+    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree(@AgileInParam I inParam) {
         if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
         }
@@ -115,8 +88,10 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
             throw new RuntimeException("your out vo class must is TreeBase subclass");
         }
 
-        List<?> result = toOutVo(list);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, service().tree(new ArrayList(result)));
+        ArrayList<P> result = new ArrayList<>((Collection<? extends P>) toOutVo(list));
+        L rootParentId = (L) getOutVoClass().getMethod("rootParentId").invoke(null);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, service().tree(result, rootParentId));
+
         return RETURN.SUCCESS;
     }
 

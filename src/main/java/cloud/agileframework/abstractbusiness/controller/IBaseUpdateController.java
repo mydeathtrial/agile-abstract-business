@@ -1,9 +1,12 @@
 package cloud.agileframework.abstractbusiness.controller;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
+import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
+import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.Update;
 import lombok.SneakyThrows;
@@ -18,19 +21,22 @@ import javax.validation.groups.Default;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseUpdateController<E extends IBaseEntity, O extends IBaseOutParamVo> extends IBaseController<E, O> {
+public interface IBaseUpdateController<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends IBaseController<E, O> {
     /**
      * 更新
      *
-     * @param entity 实体
+     * @param inParam 入参
+     * @param data    实体
      * @return 响应
      */
     @SneakyThrows
     @Validate(value = "id", nullable = false)
     @PutMapping(value = {"${agile.base-service.update:}"})
-    default RETURN update(@AgileInParam E entity) {
-        validate(entity, Default.class, Update.class);
-        service().updateData(entity);
+    default RETURN update(@AgileInParam I inParam, @AgileInParam E data) {
+        validate(inParam, Default.class, Update.class);
+        validateEntityExists(data);
+        validateEntity(data, Default.class, Update.class);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(service().updateData(data)));
         return RETURN.SUCCESS;
     }
 }

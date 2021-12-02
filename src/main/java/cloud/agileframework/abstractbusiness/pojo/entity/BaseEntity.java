@@ -3,17 +3,9 @@ package cloud.agileframework.abstractbusiness.pojo.entity;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -28,28 +20,27 @@ import java.util.Date;
 @Setter
 @SuperBuilder
 public class BaseEntity implements IBaseEntity, Serializable {
-    public BaseEntity() {
-    }
-
-    private Long id;
-    private Long createUserId;
+    private Long createUser;
     private Date createTime;
-    private Long updateUserId;
+    private Long updateUser;
     private Date updateTime;
     private Boolean delete = false;
+
+    public BaseEntity() {
+    }
 
     @Override
     @Basic
     @Column(name = "create_user", length = 20)
-    public Long getCreateUserId() {
-        return createUserId;
+    public Long getCreateUser() {
+        return createUser;
     }
 
     @Override
     @Temporal(value = TemporalType.TIMESTAMP)
     @Basic
     @CreationTimestamp
-    @Column(name = "create_time", updatable = false, insertable = false)
+    @Column(name = "create_time", updatable = false)
     public Date getCreateTime() {
         return createTime;
     }
@@ -57,13 +48,13 @@ public class BaseEntity implements IBaseEntity, Serializable {
     @Override
     @Basic
     @Column(name = "update_user", length = 20)
-    public Long getUpdateUserId() {
-        return updateUserId;
+    public Long getUpdateUser() {
+        return updateUser;
     }
 
     @Override
     @Temporal(value = TemporalType.TIMESTAMP)
-    @Column(name = "update_time", updatable = false, insertable = false)
+    @Column(name = "update_time")
     @UpdateTimestamp
     @Basic
     public Date getUpdateTime() {

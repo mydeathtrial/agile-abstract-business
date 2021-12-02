@@ -2,7 +2,10 @@ package cloud.agileframework.abstractbusiness.conf;
 
 import cloud.agileframework.abstractbusiness.controller.BaseBusinessService;
 import cloud.agileframework.abstractbusiness.service.BaseService;
+import cloud.agileframework.abstractbusiness.service.ISecurityService;
+import cloud.agileframework.abstractbusiness.service.SecurityService;
 import cloud.agileframework.jpa.config.DaoAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,5 +34,17 @@ public class BusinessAutoConfiguration {
     @ConditionalOnMissingBean(BaseBusinessService.class)
     public BaseBusinessService baseBusinessController() {
         return new BaseBusinessService();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(type = "cloud.agileframework.security.config.SecurityAutoConfiguration.class")
+    public ISecurityService noSecurityService() {
+        return () -> null;
+    }
+
+    @Bean
+    @ConditionalOnBean(type = "cloud.agileframework.security.config.SecurityAutoConfiguration.class")
+    public ISecurityService securityService() {
+        return new SecurityService();
     }
 }

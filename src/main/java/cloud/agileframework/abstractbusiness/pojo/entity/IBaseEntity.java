@@ -16,7 +16,7 @@ public interface IBaseEntity {
      *
      * @return 创建人主键
      */
-    Long getCreateUserId();
+    Long getCreateUser();
 
     /**
      * 取创建时间
@@ -30,7 +30,7 @@ public interface IBaseEntity {
      *
      * @return 更新人主键
      */
-    Long getUpdateUserId();
+    Long getUpdateUser();
 
     /**
      * 取更新时间
@@ -51,7 +51,7 @@ public interface IBaseEntity {
      *
      * @param createUserId 创建人主键
      */
-    void setCreateUserId(Long createUserId);
+    void setCreateUser(Long createUserId);
 
     /**
      * 设置创建时间
@@ -65,7 +65,7 @@ public interface IBaseEntity {
      *
      * @param updateUserId 更新人主键
      */
-    void setUpdateUserId(Long updateUserId);
+    void setUpdateUser(Long updateUserId);
 
     /**
      * 设置更新时间

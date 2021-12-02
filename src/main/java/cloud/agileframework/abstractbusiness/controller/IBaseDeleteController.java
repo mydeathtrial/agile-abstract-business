@@ -1,6 +1,7 @@
 package cloud.agileframework.abstractbusiness.controller;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
+import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.base.RETURN;
@@ -17,7 +18,7 @@ import java.util.List;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseDeleteController<E extends IBaseEntity, O extends IBaseOutParamVo> extends IBaseController<E, O> {
+public interface IBaseDeleteController<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends IBaseController<E, O> {
 
     String ID = "id";
 
@@ -42,7 +43,7 @@ public interface IBaseDeleteController<E extends IBaseEntity, O extends IBaseOut
      */
     @Validate(nullable = false)
     @DeleteMapping(value = {"${agile.base-service.deleteByIds:}"})
-    default RETURN delete(@AgileInParam List<String> ids) {
+    default RETURN delete(@AgileInParam(ID) List<String> ids) {
         service().deleteByIds(ids, getEntityClass());
         return RETURN.SUCCESS;
     }
