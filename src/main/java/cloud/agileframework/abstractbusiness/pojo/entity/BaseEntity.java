@@ -1,5 +1,6 @@
 package cloud.agileframework.abstractbusiness.pojo.entity;
 
+import lombok.Builder;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,9 +25,11 @@ public class BaseEntity implements IBaseEntity, Serializable {
     private Date createTime;
     private Long updateUser;
     private Date updateTime;
+    @Builder.Default
     private Boolean delete = false;
 
     public BaseEntity() {
+        delete = false;
     }
 
     @Override
@@ -63,7 +66,7 @@ public class BaseEntity implements IBaseEntity, Serializable {
 
     @Override
     @Basic
-    @Column(name = "delete", length = 1, updatable = false, insertable = false)
+    @Column(name = "`delete`", length = 1, updatable = false)
     public Boolean getDelete() {
         return delete;
     }

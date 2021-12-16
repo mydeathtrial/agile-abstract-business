@@ -89,8 +89,6 @@ public class BaseBusinessService {
 
                         if (!demoList.isEmpty()) {
 
-                            if (excludeSelf(data, dao, demoList)) return null;
-
                             Remark remark = ClassUtil.getFieldAnnotation(data.getClass(), fieldName, Remark.class);
                             String fieldRemark = remark == null ? fieldName : remark.value();
                             return new ValidateMsg(fieldRemark + "“" + fieldValue + "”重复", fieldName, fieldValue);
@@ -128,35 +126,12 @@ public class BaseBusinessService {
                         });
                 List<Object> demoList = dao.findAll(testData);
                 if (!demoList.isEmpty()) {
-
-                    if (excludeSelf(data, dao, demoList)) return Lists.newArrayList();
-
-                    return Lists.newArrayList(new ValidateMsg(String.join(",", remarks) + "组合值不能重复", "", ""));
+                    return Lists.newArrayList(new ValidateMsg(String.join(",", remarks) + "组合不能重复", "", ""));
                 }
             }
         }
 
         return Lists.newArrayList();
-    }
-
-    /**
-     * 排除更新的因素
-     *
-     * @param data     新增或者更新的数据
-     * @param dao      持久层工具
-     * @param demoList 查询出来重复的数据
-     * @return demoList是否被清空
-     */
-    private static boolean excludeSelf(Object data, Dao dao, List<Object> demoList) {
-        if (demoList == null || demoList.isEmpty()) {
-            return true;
-        }
-        Object id = dao.getId(data);
-        if (id != null) {
-            demoList = demoList.stream().filter(d -> !id.equals(dao.getId(d))).collect(Collectors.toList());
-        }
-
-        return demoList.isEmpty();
     }
 
     private static Object setFieldValue(Object data, String fieldName, Object testData) {
