@@ -1,9 +1,11 @@
 package cloud.agileframework.abstractbusiness.pojo.vo;
 
 import cloud.agileframework.common.util.collection.SortInfo;
+import cloud.agileframework.validate.group.PageQuery;
 import lombok.Data;
 import lombok.ToString;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
 
@@ -26,10 +28,12 @@ public class BaseInParamVo implements Serializable {
     /**
      * 页数
      */
+    @NotNull(groups = PageQuery.class)
     private Integer pageNum;
 
     /**
      * 数量
      */
+    @NotNull(groups = PageQuery.class)
     private Integer pageSize;
 }
