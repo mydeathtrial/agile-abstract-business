@@ -156,7 +156,7 @@ public class BaseService {
         if (data instanceof IBaseEntity && ((IBaseEntity) data).getUpdateUser() == null) {
             ((IBaseEntity) data).setUpdateUser(security.currentUser());
         }
-        return dao.saveOrUpdate(data);
+        return dao.updateOfNotNull(data);
     }
 
     public <I extends BaseInParamVo> List<Object> list(String model, I inParam) throws NoSuchRequestServiceException {

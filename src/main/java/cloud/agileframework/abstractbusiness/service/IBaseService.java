@@ -18,6 +18,7 @@ import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.ValidateUtil;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -66,9 +67,18 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      * @param pojo 数据库数据
      * @throws EntityExistsException 数据不存在异常
      */
-    default <A> void validateEntityExists(A pojo) throws EntityExistsException {
+    default <A> void validateEntityExists(A pojo) throws EntityExistsException, AgileArgumentException {
         Dao dao = BeanUtil.getBean(Dao.class);
         Object id = dao.getId(pojo);
+        if (id == null) {
+            ServletUtil.getCurrentRequest()
+                    .setAttribute(Constant.RequestAttributeAbout.ATTRIBUTE_ERROR,
+                            Collections.singleton(
+                                    new ValidateMsg("主键不允许为空", dao.getIdField(getEntityClass()).getName(), null)
+                            )
+                    );
+            throw new AgileArgumentException();
+        }
         List<A> old = dao.findAllByArrayId((Class<A>) pojo.getClass(), id);
         if (old == null || old.isEmpty()) {
             throw new EntityExistsException(id + "");

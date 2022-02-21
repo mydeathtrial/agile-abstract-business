@@ -29,7 +29,7 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
      * @return 响应
      */
     @SneakyThrows
-    @Validate(value = "id", nullable = false)
+    @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.update:}"}, method = RequestMethod.PUT)
     default RETURN update() {
         I inParam = AgileParam.getInParam(getInVoClass());
