@@ -66,7 +66,7 @@ public class BaseEntity implements IBaseEntity, Serializable {
 
     @Override
     @Basic
-    @Column(name = "`delete`", length = 1, updatable = false)
+    @Column(name = "del_flag", length = 1, updatable = false)
     public Boolean getDelete() {
         return delete;
     }
