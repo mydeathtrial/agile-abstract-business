@@ -140,12 +140,16 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     /**
      * 下载的文件名字
      */
-    String fileName();
+    default String fileName(){
+        return "下载文件";
+    }
 
     /**
      * 模板文件的路径
      */
-    String templatePath();
+    default String templatePath() throws NoSuchFileException {
+        throw new NoSuchFileException("未配置模板文件目录");
+    }
 
     default POIUtil.VERSION version() {
         return POIUtil.VERSION.V2003;
