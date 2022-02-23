@@ -15,5 +15,5 @@ public interface AllBusinessService<E extends IBaseEntity, I extends BaseInParam
         IBaseSaveService<E, I, O>,
         IBaseDeleteService<E, I, O>,
         IBaseUpdateService<E, I, O>,
-        IBaseQueryService<E, I, O> {
+        IBaseFileService<E, I, O> {
 }

@@ -37,7 +37,7 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
         validate(inParam, Default.class, Update.class);
         validateEntityExists(data);
         validateEntity(data, Default.class, Update.class);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(service().updateData(data)));
+        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(updateData(data)));
         return RETURN.SUCCESS;
     }
 }

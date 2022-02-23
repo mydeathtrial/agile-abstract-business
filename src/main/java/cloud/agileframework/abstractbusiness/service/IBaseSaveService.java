@@ -34,7 +34,7 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
         E data = AgileParam.getInParam(getEntityClass());
         validate(inParam, Default.class, Insert.class);
         validateEntity(data, Default.class, Insert.class);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(service().saveData(data)));
+        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(saveData(data)));
         return RETURN.SUCCESS;
     }
 }

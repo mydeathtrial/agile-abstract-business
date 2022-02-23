@@ -7,7 +7,9 @@ import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
+import cloud.agileframework.mvc.annotation.NotAPI;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
@@ -42,9 +44,18 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default RETURN list() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
-        List<?> list = service().list(getEntityClass(), inParam);
+        String sql = listSql();
+        List<?> list;
+        if (sql != null) {
+            list = list(getOutVoClass(), inParam, sql);
+        } else {
+            list = list(getEntityClass(), inParam);
+        }
 
         List<O> result = toOutVo(list);
+        for (O vo : result) {
+            handingListVo(vo);
+        }
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
     }
@@ -61,8 +72,17 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default RETURN page() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, PageQuery.class);
-        Page<?> page = service().page(getEntityClass(), inParam);
-        PageImpl<?> result = new PageImpl<>(toOutVo(page.getContent()), page.getPageable(), page.getTotalElements());
+        String sql = listSql();
+        Page<?> page;
+        if (sql != null) {
+            page = page(getOutVoClass(), inParam, sql);
+        } else {
+            page = page(getEntityClass(), inParam);
+        }
+        PageImpl<O> result = new PageImpl<>(toOutVo(page.getContent()), page.getPageable(), page.getTotalElements());
+        for (O vo : result.getContent()) {
+            handingListVo(vo);
+        }
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
     }
@@ -81,16 +101,15 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
         }
         validate(inParam, Query.class);
 
-        List<?> list = service().list(getEntityClass(), inParam);
+        List<?> list = list(getEntityClass(), inParam);
 
         if (!TreeBase.class.isAssignableFrom(getOutVoClass())) {
-            throw new RuntimeException("your out vo class must is TreeBase subclass");
+            throw new AgileArgumentException("如果是树形结构查询，OutVo必须继承于TreeBase");
         }
 
         ArrayList<P> result = new ArrayList<>((Collection<? extends P>) toOutVo(list));
         L rootParentId = (L) getOutVoClass().getMethod("rootParentId").invoke(null);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, service().tree(result, rootParentId));
-
+        AgileReturn.add(Constant.ResponseAbout.RESULT, tree(result, rootParentId));
         return RETURN.SUCCESS;
     }
 
@@ -102,9 +121,34 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      */
     @Validate(value = "id", nullable = false)
     @Mapping(value = {"${agile.base-service.queryById:/{id}}"}, method = RequestMethod.GET)
-    default RETURN queryById(@AgileInParam("id") String id) {
-        final Object result = service().queryById(getEntityClass(), id);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(result));
+    default RETURN queryById(@AgileInParam("id") String id) throws NoSuchFieldException {
+        O result;
+        if (detailSql() == null) {
+            result = toSingleOutVo(queryById(getEntityClass(), id));
+        } else {
+            result = queryOne(getOutVoClass(), getEntityClass(), id, detailSql());
+        }
+        handingDetailVo(result);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
     }
+
+    @NotAPI
+    default String listSql() {
+        return null;
+    }
+
+    @NotAPI
+    default String detailSql() {
+        return null;
+    }
+
+    @NotAPI
+    default void handingListVo(O vo) {
+    }
+
+    @NotAPI
+    default void handingDetailVo(O vo) {
+    }
+
 }

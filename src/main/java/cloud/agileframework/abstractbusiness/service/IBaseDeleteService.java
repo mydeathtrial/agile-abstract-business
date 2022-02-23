@@ -32,7 +32,7 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
     @Validate(value = ID, nullable = false)
     @Mapping(value = {"${agile.base-service.deleteById:/{id}}"}, method = RequestMethod.DELETE)
     default RETURN delete(@PathVariable(ID) String id) {
-        service().deleteById(id, getEntityClass());
+        deleteById(id, getEntityClass());
         return RETURN.SUCCESS;
     }
 
@@ -45,7 +45,7 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
     @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.deleteByIds:}"}, method = RequestMethod.DELETE)
     default RETURN delete(@AgileInParam(ID) List<String> ids) {
-        service().deleteByIds(ids, getEntityClass());
+        deleteByIds(ids, getEntityClass());
         return RETURN.SUCCESS;
     }
 
@@ -56,7 +56,7 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
      */
     @Mapping(value = {"${agile.base-service.clean:/all}"}, method = RequestMethod.DELETE)
     default RETURN clean() {
-        service().clean(getEntityClass());
+        clean(getEntityClass());
         return RETURN.SUCCESS;
     }
 }

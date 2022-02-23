@@ -43,7 +43,13 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
     @PostMapping(value = {"${agile.base-service.query:/list}"})
     default RETURN list(@AgileInParam I inParam) {
         validate(inParam, Query.class);
-        List<?> list = service().list(getEntityClass(), inParam);
+        String sql = listSql();
+        List<?> list;
+        if (sql != null) {
+            list = service().list(getOutVoClass(), inParam, sql);
+        } else {
+            list = service().list(getEntityClass(), inParam);
+        }
 
         List<O> result = toOutVo(list);
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
@@ -62,7 +68,13 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
     @PostMapping(value = {"${agile.base-service.page:/{pageNum}/{pageSize}}"})
     default RETURN page(@AgileInParam I inParam) {
         validate(inParam, PageQuery.class);
-        Page<?> page = service().page(getEntityClass(), inParam);
+        String sql = listSql();
+        Page<?> page;
+        if (sql != null) {
+            page = service().page(getOutVoClass(), inParam, sql);
+        } else {
+            page = service().page(getEntityClass(), inParam);
+        }
         PageImpl<?> result = new PageImpl<>(toOutVo(page.getContent()), page.getPageable(), page.getTotalElements());
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
@@ -103,9 +115,23 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
      */
     @Validate(value = "id", nullable = false)
     @GetMapping(value = {"${agile.base-service.queryById:/{id}}"})
-    default RETURN queryById(@AgileInParam("id") String id) {
-        final Object result = service().queryById(getEntityClass(), id);
+    default RETURN queryById(@AgileInParam("id") String id) throws NoSuchFieldException {
+        Object result;
+        if (detailSql() == null) {
+            result = service().queryById(getEntityClass(), id);
+        } else {
+            result = service().queryOne(getOutVoClass(), getEntityClass(), id, detailSql());
+        }
         AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(result));
         return RETURN.SUCCESS;
     }
+
+    default String listSql() {
+        return null;
+    }
+
+    default String detailSql() {
+        return null;
+    }
+
 }

@@ -7,32 +7,24 @@ import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.common.util.collection.TreeUtil;
 import cloud.agileframework.common.util.object.ObjectUtil;
-import cloud.agileframework.common.util.string.StringUtil;
-import cloud.agileframework.jpa.dao.Dao;
-import cloud.agileframework.mvc.annotation.AgileInParam;
-import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
-import cloud.agileframework.mvc.param.AgileParam;
+import cloud.agileframework.data.common.dao.BaseDao;
+import cloud.agileframework.mvc.annotation.NotAPI;
 import cloud.agileframework.spring.util.BeanUtil;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.metamodel.EntityType;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.SortedSet;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static cloud.agileframework.abstractbusiness.service.IBaseDeleteService.ID;
 
 /**
  * @author 佟盟
@@ -41,142 +33,105 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 1.0
  */
-@Service
-public class BaseService {
+public interface BaseService {
 
-    @Autowired
-    private Dao dao;
+    @NotAPI
+    default BaseDao dao() {
+        return BeanUtil.getBean(BaseDao.class);
+    }
 
-    @Autowired
-    private ISecurityService security;
+    @NotAPI
+    default ISecurityService security() {
+        return BeanUtil.getBean(ISecurityService.class);
+    }
 
-    public static <T> T dataAsParam(String model, Function<Object, T> function) throws NoSuchRequestServiceException {
-        return typeAsParam(model, javaType -> {
-            Object data = AgileParam.getInParam(javaType);
-            if (data == null) {
-                return function.apply(javaType);
+    @NotAPI
+    @Transactional(rollbackFor = Exception.class)
+    default <A> void saveData(List<A> data) throws NoSuchFieldException, IllegalAccessException {
+        for (A node : data) {
+            Object v = dao().getId(node);
+            if (StringUtils.isBlank(String.valueOf(v))) {
+                dao().setId(node, null);
             }
-            return function.apply(data);
-        });
-    }
-
-    private static <T> T typeAsParam(String model, Function<Class<?>, T> function) throws NoSuchRequestServiceException {
-        Optional<EntityType<?>> entityType = getEntityType(model);
-        if (entityType.isPresent()) {
-            Class<?> javaType = entityType.get().getJavaType();
-            return function.apply(javaType);
+            if (node instanceof IBaseEntity && ((IBaseEntity) node).getCreateUser() == null) {
+                //赋予创建用户
+                ((IBaseEntity) node).setCreateUser(security().currentUser());
+            }
         }
-        throw new NoSuchRequestServiceException();
+
+        dao().save(data);
     }
 
-    private static void typeAsParam2(String model, Consumer<Class<?>> consumer) throws NoSuchRequestServiceException {
-        Optional<EntityType<?>> entityType = getEntityType(model);
-        if (entityType.isPresent()) {
-            Class<?> javaType = entityType.get().getJavaType();
-            consumer.accept(javaType);
-            return;
-        }
-        throw new NoSuchRequestServiceException();
-    }
-
-    /**
-     * 根据访问的模型，遍历查找对应的orm类，用于后续处理
-     *
-     * @param model 模型名字
-     * @return orm类
-     */
-    private static Optional<EntityType<?>> getEntityType(String model) {
-        Dao dao = BeanUtil.getBean(Dao.class);
-        if (dao == null) {
-            throw new RuntimeException("not found Dao bean");
-        }
-        return dao.getEntityManager().getEntityManagerFactory()
-                .getMetamodel()
-                .getEntities()
-                .stream()
-                .filter(n -> n.getName().equalsIgnoreCase(StringUtil.toUpperName(model)))
-                .findFirst();
-    }
-
+    @NotAPI
     @Transactional(rollbackFor = Exception.class)
-    public Object save(String model) throws NoSuchRequestServiceException {
-        return dataAsParam(model, this::saveData);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public <A> A saveData(A data) {
+    default <A> A saveData(A data) {
         if (data instanceof Class) {
             throw new RuntimeException("not extract data of " + data);
         }
-        Object v = dao.getId(data);
-        if (StringUtils.isBlank(String.valueOf(v))) {
-            dao.setId(data, null);
+
+        try {
+            Object v = dao().getId(data);
+            if (StringUtils.isBlank(String.valueOf(v))) {
+                dao().setId(data, null);
+            }
+            if (data instanceof IBaseEntity && ((IBaseEntity) data).getCreateUser() == null) {
+                //赋予创建用户
+                ((IBaseEntity) data).setCreateUser(security().currentUser());
+            }
+
+            return dao().saveAndReturn(data);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        if (data instanceof IBaseEntity && ((IBaseEntity) data).getCreateUser() == null) {
-            //赋予创建用户
-            ((IBaseEntity) data).setCreateUser(security.currentUser());
+    }
+
+    @NotAPI
+    @Transactional(rollbackFor = Exception.class)
+    default boolean deleteById(Object id, Class<?> javaType) {
+        return dao().deleteById(javaType, id);
+    }
+
+    @NotAPI
+    @Transactional(rollbackFor = Exception.class)
+    default boolean deleteByIds(List<String> id, Class<?> javaType) {
+        try {
+            dao().deleteInBatch(javaType, id);
+            return true;
+        } catch (NoSuchFieldException e) {
+            return false;
         }
-
-        return dao.saveAndReturn(data);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void delete(String model, Object id) throws NoSuchRequestServiceException {
-        typeAsParam(model, javaType -> deleteById(id, javaType));
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public boolean deleteById(Object id, Class<?> javaType) {
-        return dao.deleteById(javaType, id);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void delete(@AgileInParam List<String> id, String model) throws NoSuchRequestServiceException {
-        typeAsParam(model, javaType -> deleteByIds(id, javaType));
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public boolean deleteByIds(List<String> id, Class<?> javaType) {
-        dao.deleteInBatch(javaType, id);
-        return true;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public Object update(String model) throws NoSuchRequestServiceException {
-        return dataAsParam(model, this::updateData);
-    }
-
+    @NotAPI
     @SneakyThrows
     @Transactional(rollbackFor = Exception.class)
-    public <A> A updateData(A data) {
+    default <A> A updateData(A data) {
         if (data instanceof Class) {
             throw new RuntimeException("not extract data of " + data);
         }
         //赋予创建用户
         if (data instanceof IBaseEntity && ((IBaseEntity) data).getUpdateUser() == null) {
-            ((IBaseEntity) data).setUpdateUser(security.currentUser());
+            ((IBaseEntity) data).setUpdateUser(security().currentUser());
         }
-        return dao.updateOfNotNull(data);
+        return dao().updateOfNotNull(data);
     }
 
-    public <I extends BaseInParamVo> List<Object> list(String model, I inParam) throws NoSuchRequestServiceException {
-        return dataAsParam(model, data -> {
-            if (data instanceof Class) {
-                return dao.findAllByClass((Class) data, toSort(inParam));
-            }
-            return dao.findAll(data, toSort(inParam));
-        });
-    }
-
-    public <I extends BaseInParamVo> List<?> list(Class<?> entityClass, I inParam) {
+    @NotAPI
+    default <I extends BaseInParamVo> List<?> list(Class<?> entityClass, I inParam) {
         Object data = ObjectUtil.to(inParam, new TypeReference<>(entityClass));
         if (data == null) {
-            return dao.findAllByClass(entityClass, toSort(inParam));
+            return dao().findAllByClass(entityClass, toSort(inParam));
         }
-        return dao.findAll(data, toSort(inParam));
+        return dao().findAll(data, toSort(inParam));
     }
 
-    <I extends BaseInParamVo> Sort toSort(I inParam) {
+    @NotAPI
+    default <I extends BaseInParamVo, V> List<V> list(Class<V> outVoClass, I inParam, String sql) {
+        return dao().findBySQL(sql, outVoClass, toSort(inParam));
+    }
+
+    @NotAPI
+    default <I extends BaseInParamVo> Sort toSort(I inParam) {
         if (inParam == null) {
             return Sort.unsorted();
         }
@@ -194,31 +149,32 @@ public class BaseService {
         return Sort.by(s);
     }
 
-    public Object queryById(String model, Object id) throws NoSuchRequestServiceException {
-        return typeAsParam(model, data -> queryById(data, id));
+    @NotAPI
+    default Object queryById(Class<?> data, Object id) {
+        return dao().findOne(data, id);
     }
 
-    public Object queryById(Class<?> data, Object id) {
-        return dao.findOne(data, id);
+    @NotAPI
+    default <V, E> V queryOne(Class<V> outVoClass, Class<E> doClass, String id, String sql) throws NoSuchFieldException {
+        HashMap<Object, Object> params = Maps.newHashMap();
+        params.put(dao().getIdField(doClass).getName(), id);
+        params.put(ID, id);
+        return dao().findOne(sql, outVoClass, params);
     }
 
-    public <I extends BaseInParamVo> Page<Object> page(String model, I inParam) throws NoSuchRequestServiceException {
-        return typeAsParam(model, data -> {
-            PageRequest pageRequest = PageRequest.of(
-                    inParam.getPageNum() - 1,
-                    inParam.getPageSize(),
-                    toSort(inParam));
+    @NotAPI
+    default <I extends BaseInParamVo, V> Page<V> page(Class<V> outVoClass, I inParam, String sql) {
+        PageRequest pageRequest = PageRequest.of(
+                inParam.getPageNum() - 1,
+                inParam.getPageSize(),
+                toSort(inParam));
 
-            Object dto = AgileParam.getInParam(data);
-            if (dto != null) {
-                return dao.page(dto, pageRequest);
-            }
-            return dao.page(data, pageRequest);
-        });
+        return dao().pageBySQL(sql, pageRequest, outVoClass, inParam);
     }
 
-    public <I extends BaseInParamVo> Page<?> page(Class<?> entityClass, I inParam) {
-        Object data = ObjectUtil.to(inParam, new TypeReference<>(entityClass));
+    @NotAPI
+    default <I extends BaseInParamVo, E> Page<E> page(Class<E> entityClass, I inParam) {
+        E data = ObjectUtil.to(inParam, new TypeReference<>(entityClass));
 
         PageRequest pageRequest = PageRequest.of(
                 inParam.getPageNum() - 1,
@@ -226,47 +182,19 @@ public class BaseService {
                 toSort(inParam));
 
         if (data == null) {
-            return dao.page(entityClass, pageRequest);
+            return dao().pageByClass(entityClass, pageRequest);
         }
-        return dao.page(data, pageRequest);
+        return dao().page(data, pageRequest);
     }
 
+    @NotAPI
     @Transactional(rollbackFor = Exception.class)
-    public void clean(String model) throws NoSuchRequestServiceException {
-        typeAsParam2(model, this::clean);
+    default void clean(Class<?> data) {
+        dao().deleteAllInBatch(data);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void clean(Class<?> data) {
-        dao.deleteAllInBatch(data);
-    }
-
-    public <I extends Serializable, A extends TreeBase<I, A>> SortedSet<A> tree(String model) throws NoSuchRequestServiceException {
-        return dataAsParam(model, data -> {
-            List<A> all;
-            Class<A> entityClass;
-            if (data instanceof Class && TreeBase.class.isAssignableFrom((Class<?>) data)) {
-                all = new ArrayList<>(dao.findAllByClass((Class<A>) data));
-                entityClass = (Class<A>) data;
-            } else if (data != null && TreeBase.class.isAssignableFrom(data.getClass())) {
-                all = new ArrayList(dao.findAll(data));
-                entityClass = (Class<A>) data.getClass();
-            } else {
-                return Sets.newTreeSet();
-            }
-            I rootParentId = null;
-            try {
-                rootParentId = (I) entityClass.getMethod("rootParentId").invoke(null);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                e.printStackTrace();
-            }
-            return TreeUtil.createTree(all,
-                    rootParentId,
-                    null);
-        });
-    }
-
-    public <I extends Serializable, A extends TreeBase<I, A>> SortedSet<A> tree(List<A> all, I rootParentId) {
+    @NotAPI
+    default <I extends Serializable, A extends TreeBase<I, A>> SortedSet<A> tree(List<A> all, I rootParentId) {
         return TreeUtil.createTree(all,
                 rootParentId,
                 null);

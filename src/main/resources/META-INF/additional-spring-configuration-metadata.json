@@ -55,6 +55,21 @@
       "name": "agile.base-service.clean",
       "type": "java.lang.String",
       "description": "清空."
+    },
+    {
+      "name": "agile.base-service.upload",
+      "type": "java.lang.String",
+      "description": "上传."
+    },
+    {
+      "name": "agile.base-service.download",
+      "type": "java.lang.String",
+      "description": "下载."
+    },
+    {
+      "name": "agile.base-service.template",
+      "type": "java.lang.String",
+      "description": "模板."
     }
   ]
 }
