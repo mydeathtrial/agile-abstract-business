@@ -10,6 +10,8 @@ import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.data.common.dao.BaseDao;
+import cloud.agileframework.dictionary.AbstractDictionaryDataManager;
+import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.mvc.annotation.NotAPI;
@@ -18,7 +20,10 @@ import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.spring.util.ServletUtil;
 import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.ValidateUtil;
+import org.apache.commons.lang3.reflect.TypeUtils;
+import org.springframework.core.ResolvableType;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
@@ -181,5 +186,19 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
         }
         DictionaryUtil.cover(o);
         return o;
+    }
+    
+    default AbstractDictionaryDataManager<DictionaryDataBase> dataManager(){
+        if(!DictionaryDataBase.class.isAssignableFrom(getEntityClass())){
+            return null;
+        }
+        TypeReference<AbstractDictionaryDataManager<DictionaryDataBase>> typeReference = new TypeReference<AbstractDictionaryDataManager<DictionaryDataBase>>() {
+        };
+        ParameterizedType parameterizedType = (ParameterizedType) typeReference.getType();
+        parameterizedType = TypeUtils.parameterizeWithOwner(parameterizedType.getOwnerType(),
+                (Class<?>) parameterizedType.getRawType(),
+                getEntityClass());
+        typeReference.replace(parameterizedType);
+        return (AbstractDictionaryDataManager<DictionaryDataBase>) BeanUtil.getApplicationContext().getBeanProvider(ResolvableType.forType(typeReference.getType())).getIfUnique();
     }
 }

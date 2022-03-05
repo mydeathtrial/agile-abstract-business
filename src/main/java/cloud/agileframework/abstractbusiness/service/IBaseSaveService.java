@@ -4,6 +4,7 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
+import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
@@ -34,6 +35,11 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
         E data = AgileParam.getInParam(getEntityClass());
         validate(inParam, Default.class, Insert.class);
         validateEntity(data, Default.class, Insert.class);
+
+        if (dataManager() != null) {
+            dataManager().sync().add((DictionaryDataBase) data);
+            return RETURN.SUCCESS;
+        }
         AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(saveData(data)));
         return RETURN.SUCCESS;
     }

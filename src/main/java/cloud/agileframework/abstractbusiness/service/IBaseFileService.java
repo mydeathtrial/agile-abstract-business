@@ -54,6 +54,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     default RETURN upload(@AgileInParam("file") MultipartFile file) {
         Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
         List<CellInfo> cellInfos = remarks.stream()
+                .filter(r->r.getAnnotation().excelHead())
                 .map(r -> CellInfo.builder()
                         .setKey(r.getMember().getName())
                         .setShowName(r.getAnnotation().value())
@@ -101,6 +102,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 .map(r -> CellInfo.builder()
                         .setKey(r.getMember().getName())
                         .setShowName(r.getAnnotation().value())
+                        .setSort(r.getAnnotation().sort())
                         .build())
                 .collect(Collectors.toList());
 

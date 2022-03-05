@@ -4,6 +4,7 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
+import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
@@ -37,6 +38,11 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
         validate(inParam, Default.class, Update.class);
         validateEntityExists(data);
         validateEntity(data, Default.class, Update.class);
+
+        if (dataManager() != null) {
+            dataManager().sync().updateOfNotNull((DictionaryDataBase) data);
+            return RETURN.SUCCESS;
+        }
         AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(updateData(data)));
         return RETURN.SUCCESS;
     }
