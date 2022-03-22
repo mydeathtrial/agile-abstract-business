@@ -127,7 +127,10 @@ public interface BaseService {
 
     @NotAPI
     default <I extends BaseInParamVo, V> List<V> list(Class<V> outVoClass, I inParam, String sql) {
-        return dao().findBySQL(sql, outVoClass, toSort(inParam));
+        if (inParam == null) {
+            return dao().findBySQL(sql, outVoClass, Maps.newHashMap());
+        }
+        return dao().findBySQL(sql, outVoClass, inParam);
     }
 
     @NotAPI

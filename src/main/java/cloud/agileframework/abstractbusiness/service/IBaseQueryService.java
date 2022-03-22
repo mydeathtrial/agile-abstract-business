@@ -5,6 +5,7 @@ import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.collection.TreeBase;
+import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.annotation.NotAPI;
@@ -65,8 +66,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      *
      * @return 分页
      */
-    @Validate(value = "pageNum", nullable = false)
-    @Validate(value = "pageSize", nullable = false)
+    @Validate(beanClass = BaseInParamVo.class)
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.page:/{pageNum}/{pageSize}}"}, method = RequestMethod.POST)
     default RETURN page() {
@@ -123,7 +123,10 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     @Mapping(value = {"${agile.base-service.queryById:/{id}}"}, method = RequestMethod.GET)
     default RETURN queryById(@AgileInParam("id") String id) throws NoSuchFieldException {
         O result;
-        if (detailSql() == null) {
+
+        if (dataManager() != null) {
+            result = toSingleOutVo(DictionaryUtil.findById(dataManager().dataSource(), id));
+        } else if (detailSql() == null) {
             result = toSingleOutVo(queryById(getEntityClass(), id));
         } else {
             result = queryOne(getOutVoClass(), getEntityClass(), id, detailSql());

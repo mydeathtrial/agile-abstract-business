@@ -1,5 +1,6 @@
 package cloud.agileframework.abstractbusiness.pojo.vo;
 
+import cloud.agileframework.common.annotation.Alias;
 import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.validate.group.PageQuery;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class BaseInParamVo implements Serializable {
     /**
      * 页数
      */
+    @Alias("page")
     @NotNull(groups = PageQuery.class)
     private Integer pageNum;
 

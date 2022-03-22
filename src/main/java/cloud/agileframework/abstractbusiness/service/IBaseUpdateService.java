@@ -4,6 +4,8 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
+import cloud.agileframework.common.util.clazz.TypeReference;
+import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
@@ -34,7 +36,7 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
     @Mapping(value = {"${agile.base-service.update:}"}, method = RequestMethod.PUT)
     default RETURN update() {
         I inParam = AgileParam.getInParam(getInVoClass());
-        E data = AgileParam.getInParam(getEntityClass());
+        E data = ObjectUtil.to(inParam,new TypeReference<>(getEntityClass()));
         validate(inParam, Default.class, Update.class);
         validateEntityExists(data);
         validateEntity(data, Default.class, Update.class);
