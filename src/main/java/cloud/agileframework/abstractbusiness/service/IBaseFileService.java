@@ -54,7 +54,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     default RETURN upload(@AgileInParam("file") MultipartFile file) {
         Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
         List<CellInfo> cellInfos = remarks.stream()
-                .filter(r->r.getAnnotation().excelHead())
+                .filter(r -> r.getAnnotation().excelHead())
                 .map(r -> CellInfo.builder()
                         .setKey(r.getMember().getName())
                         .setShowName(r.getAnnotation().value())
@@ -118,31 +118,46 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      */
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.template:/template}"}, method = {RequestMethod.GET, RequestMethod.POST})
-    default ResponseFile template() {
-        String filePath = templatePath();
-        if (filePath.startsWith("classpath:")) {
-            String substring = filePath.substring(10);
-            if (!substring.startsWith("/")) {
-                substring = "/" + substring;
+    default Object template() {
+        try {
+            String filePath = templatePath();
+            if (filePath.startsWith("classpath:")) {
+                String substring = filePath.substring(10);
+                if (!substring.startsWith("/")) {
+                    substring = "/" + substring;
+                }
+                URL classpath = getClass().getResource(substring);
+                if (classpath == null) {
+                    throw new NoSuchFileException(filePath);
+                }
+                filePath = classpath.getPath();
             }
-            URL classpath = getClass().getResource(substring);
-            if (classpath == null) {
+            filePath = URLDecoder.decode(filePath, Charset.defaultCharset().name());
+            File file = new File(filePath);
+            if (!file.exists()) {
                 throw new NoSuchFileException(filePath);
             }
-            filePath = classpath.getPath();
+            return new ResponseFile(file.getName(), file);
+        } catch (NoSuchFileException e) {
+            Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
+            List<CellInfo> cellInfos = remarks.stream()
+                    .map(r -> CellInfo.builder()
+                            .setKey(r.getMember().getName())
+                            .setShowName(r.getAnnotation().value())
+                            .setSort(r.getAnnotation().sort())
+                            .build())
+                    .collect(Collectors.toList());
+
+            Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).build());
+
+            return new ExcelFile(fileName(), workbook);
         }
-        filePath = URLDecoder.decode(filePath, Charset.defaultCharset().name());
-        File file = new File(filePath);
-        if (!file.exists()) {
-            throw new NoSuchFileException(filePath);
-        }
-        return new ResponseFile(file.getName(), file);
     }
 
     /**
      * 下载的文件名字
      */
-    default String fileName(){
+    default String fileName() {
         return "下载文件";
     }
 
