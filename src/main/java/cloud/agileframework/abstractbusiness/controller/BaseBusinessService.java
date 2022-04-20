@@ -71,7 +71,10 @@ public class BaseBusinessService {
                         }
                         Object fieldValue = setFieldValue(data, fieldName, demo);
 
-                        List<Object> demoList = dao.findAll(demo);
+                        List<Object> demoList = dao.findAll(demo)
+                                .stream()
+                                .filter(n->!Objects.equals(dao.getId(n),dao.getId(data)))
+                                .collect(Collectors.toList());
 
                         if (!demoList.isEmpty()) {
 
@@ -110,7 +113,10 @@ public class BaseBusinessService {
                             remarks.add(fieldRemark);
                             setFieldValue(data, fieldName, testData);
                         });
-                List<Object> demoList = dao.findAll(testData);
+                List<Object> demoList = dao.findAll(testData)
+                        .stream()
+                        .filter(n->!Objects.equals(dao.getId(n),dao.getId(data)))
+                        .collect(Collectors.toList());
                 if (!demoList.isEmpty()) {
                     return Lists.newArrayList(new ValidateMsg(String.join(",", remarks) + "组合不能重复", "", ""));
                 }
