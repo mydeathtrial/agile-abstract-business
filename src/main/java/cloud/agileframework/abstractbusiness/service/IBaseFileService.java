@@ -87,7 +87,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     default ExcelFile download() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
-        String sql = listSql();
+        String sql = IBaseQueryService.parseOrder(inParam.getSortColumn(), listSql());
         List<?> list;
         if (sql != null) {
             list = list(getOutVoClass(), inParam, sql);

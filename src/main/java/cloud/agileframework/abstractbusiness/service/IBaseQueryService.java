@@ -4,6 +4,7 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
+import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
@@ -45,7 +46,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default RETURN list() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
-        String sql = listSql();
+        String sql = IBaseQueryService.parseOrder(inParam.getSortColumn(), listSql());
         List<?> list;
         if (sql != null) {
             list = list(getOutVoClass(), inParam, sql);
@@ -72,7 +73,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default RETURN page() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, PageQuery.class);
-        String sql = listSql();
+        String sql = IBaseQueryService.parseOrder(inParam.getSortColumn(), listSql());;
         Page<?> page;
         if (sql != null) {
             page = page(getOutVoClass(), inParam, sql);
@@ -152,6 +153,23 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
 
     @NotAPI
     default void handingDetailVo(O vo) {
+    }
+
+
+    static String parseOrder(List<SortInfo> sortColumn, String sql) {
+        if (sortColumn == null || sortColumn.isEmpty()) {
+            return sql;
+        }
+        StringBuilder sqlBuilder = new StringBuilder(sql);
+        sqlBuilder.append(" order by ");
+        for (int i = 0; i < sortColumn.size(); i++) {
+            if (i > 0) {
+                sqlBuilder.append(",");
+            }
+            SortInfo column = sortColumn.get(i);
+            sqlBuilder.append(column.isSort() ? column.getProperty() : column.getProperty() + " DESC ");
+        }
+        return sqlBuilder.toString();
     }
 
 }
