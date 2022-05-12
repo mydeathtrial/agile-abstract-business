@@ -18,6 +18,7 @@ import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
+import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -46,7 +47,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default RETURN list() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
-        String sql = IBaseQueryService.parseOrder(inParam.getSortColumn(), listSql());
+        String sql = IBaseQueryService.parseOrder(inParam, listSql());
         List<?> list;
         if (sql != null) {
             list = list(getOutVoClass(), inParam, sql);
@@ -73,7 +74,8 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default RETURN page() {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, PageQuery.class);
-        String sql = IBaseQueryService.parseOrder(inParam.getSortColumn(), listSql());;
+        String sql = IBaseQueryService.parseOrder(inParam, listSql());
+        ;
         Page<?> page;
         if (sql != null) {
             page = page(getOutVoClass(), inParam, sql);
@@ -156,9 +158,16 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     }
 
 
-    static String parseOrder(List<SortInfo> sortColumn, String sql) {
+    static String parseOrder(BaseInParamVo inParam, String sql) {
+        if (inParam == null) {
+            return sql;
+        }
+        List<SortInfo> sortColumn = inParam.getSortColumn();
         if (sortColumn == null || sortColumn.isEmpty()) {
             return sql;
+        }
+        if (sql.endsWith(";")) {
+            sql = sql.substring(0, sql.length() - 1);
         }
         StringBuilder sqlBuilder = new StringBuilder(sql);
         sqlBuilder.append(" order by ");
@@ -171,5 +180,4 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
         }
         return sqlBuilder.toString();
     }
-
 }
