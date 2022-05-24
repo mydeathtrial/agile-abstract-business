@@ -44,18 +44,18 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      */
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.query:/list}"}, method = RequestMethod.POST)
-    default RETURN list() {
+    default RETURN list() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
         String sql = IBaseQueryService.parseOrder(inParam, listSql());
-        List<?> list;
+        List<O> result;
         if (sql != null) {
-            list = list(getOutVoClass(), inParam, sql);
+            result = list(getOutVoClass(), inParam, sql);
         } else {
-            list = list(getEntityClass(), inParam);
+            List<?> list = list(getEntityClass(), inParam);
+            result = toOutVo(list);
         }
 
-        List<O> result = toOutVo(list);
         for (O vo : result) {
             handingListVo(vo);
         }
@@ -71,11 +71,10 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     @Validate(beanClass = BaseInParamVo.class)
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.page:/{pageNum}/{pageSize}}"}, method = RequestMethod.POST)
-    default RETURN page() {
+    default RETURN page() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, PageQuery.class);
         String sql = IBaseQueryService.parseOrder(inParam, listSql());
-        ;
         Page<?> page;
         if (sql != null) {
             page = page(getOutVoClass(), inParam, sql);
@@ -97,7 +96,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      */
     @SneakyThrows
     @Mapping(value = "${agile.base-service.tree:/tree}", method = {RequestMethod.GET, RequestMethod.POST})
-    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree() {
+    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
@@ -124,7 +123,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      */
     @Validate(value = "id", nullable = false)
     @Mapping(value = {"${agile.base-service.queryById:/{id}}"}, method = RequestMethod.GET)
-    default RETURN queryById(@AgileInParam("id") String id) throws NoSuchFieldException {
+    default RETURN queryById(@AgileInParam("id") String id) throws Exception {
         O result;
 
         if (dataManager() != null) {
@@ -150,11 +149,11 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     }
 
     @NotAPI
-    default void handingListVo(O vo) {
+    default void handingListVo(O vo) throws Exception {
     }
 
     @NotAPI
-    default void handingDetailVo(O vo) {
+    default void handingDetailVo(O vo) throws Exception {
     }
 
 

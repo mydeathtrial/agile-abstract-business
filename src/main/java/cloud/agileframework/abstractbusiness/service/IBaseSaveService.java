@@ -11,11 +11,15 @@ import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
+import cloud.agileframework.security.filter.login.CustomerUserDetails;
+import cloud.agileframework.spring.util.SecurityUtil;
 import cloud.agileframework.validate.group.Insert;
 import lombok.SneakyThrows;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.validation.groups.Default;
+import java.util.Date;
 
 /**
  * @author 佟盟
@@ -32,11 +36,19 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
      */
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.save:}"}, method = RequestMethod.POST)
-    default RETURN save() {
+    default RETURN save() throws Exception{
         I inParam = AgileParam.getInParam(getInVoClass());
         E data = ObjectUtil.to(inParam,new TypeReference<>(getEntityClass()));
         validate(inParam, Default.class, Insert.class);
         validateEntity(data, Default.class, Insert.class);
+        
+        try {
+            data.setCreateTime(new Date());
+            UserDetails currentUser = SecurityUtil.currentUser();
+            if(currentUser instanceof CustomerUserDetails){
+                data.setCreateUser(((CustomerUserDetails) currentUser).id());
+            }
+        }catch (Exception ignored){}
 
         if (dataManager() != null) {
             dataManager().sync().add((DictionaryDataBase) data);

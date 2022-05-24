@@ -51,7 +51,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      */
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.upload:/upload}"}, method = RequestMethod.POST)
-    default RETURN upload(@AgileInParam("file") MultipartFile file) {
+    default RETURN upload(@AgileInParam("file") MultipartFile file) throws Exception {
         Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
         List<CellInfo> cellInfos = remarks.stream()
                 .filter(r -> r.getAnnotation().excelHead())
@@ -84,7 +84,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      */
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.download:/download}"}, method = {RequestMethod.POST, RequestMethod.GET})
-    default ExcelFile download() {
+    default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
         String sql = IBaseQueryService.parseOrder(inParam, listSql());
@@ -118,7 +118,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      */
     @SneakyThrows
     @Mapping(value = {"${agile.base-service.template:/template}"}, method = {RequestMethod.GET, RequestMethod.POST})
-    default Object template() {
+    default Object template() throws Exception {
         try {
             String filePath = templatePath();
             if (filePath.startsWith("classpath:")) {
