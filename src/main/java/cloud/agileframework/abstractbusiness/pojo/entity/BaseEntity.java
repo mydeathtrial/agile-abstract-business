@@ -34,7 +34,7 @@ public class BaseEntity implements IBaseEntity, Serializable {
 
     @Override
     @Basic
-    @Column(name = "create_user", length = 20)
+    @Column(name = "create_user", updatable = false, length = 20)
     public Long getCreateUser() {
         return createUser;
     }
@@ -50,14 +50,14 @@ public class BaseEntity implements IBaseEntity, Serializable {
 
     @Override
     @Basic
-    @Column(name = "update_user", length = 20)
+    @Column(name = "update_user", insertable = false, length = 20)
     public Long getUpdateUser() {
         return updateUser;
     }
 
     @Override
     @Temporal(value = TemporalType.TIMESTAMP)
-    @Column(name = "update_time")
+    @Column(name = "update_time", insertable = false)
     @UpdateTimestamp
     @Basic
     public Date getUpdateTime() {

@@ -18,7 +18,6 @@ import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
-import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -46,6 +45,10 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     @Mapping(value = {"${agile.base-service.query:/list}"}, method = RequestMethod.POST)
     default RETURN list() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
+        return list(inParam);
+    }
+
+    default RETURN list(I inParam) throws Exception {
         validate(inParam, Query.class);
         String sql = IBaseQueryService.parseOrder(inParam, listSql());
         List<O> result;
@@ -73,6 +76,10 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     @Mapping(value = {"${agile.base-service.page:/{pageNum}/{pageSize}}"}, method = RequestMethod.POST)
     default RETURN page() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
+        return page(inParam);
+    }
+
+    default RETURN page(I inParam) throws Exception {
         validate(inParam, PageQuery.class);
         String sql = IBaseQueryService.parseOrder(inParam, listSql());
         Page<?> page;
@@ -98,6 +105,10 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     @Mapping(value = "${agile.base-service.tree:/tree}", method = {RequestMethod.GET, RequestMethod.POST})
     default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
+        return tree(inParam);
+    }
+
+    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree(I inParam) throws Exception {
         if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
         }

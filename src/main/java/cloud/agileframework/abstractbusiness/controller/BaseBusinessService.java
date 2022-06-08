@@ -77,10 +77,7 @@ public class BaseBusinessService {
                                 .collect(Collectors.toList());
 
                         if (!demoList.isEmpty()) {
-
-                            Remark remark = ClassUtil.getFieldAnnotation(data.getClass(), fieldName, Remark.class);
-                            String fieldRemark = remark == null ? fieldName : remark.value();
-                            return new ValidateMsg(fieldRemark + "“" + fieldValue + "”重复", fieldName, fieldValue);
+                            return new ValidateMsg( fieldValue + "不允许重复", fieldName, fieldValue);
                         }
                         return null;
                     }).filter(Objects::nonNull).collect(Collectors.toList());

@@ -9,6 +9,7 @@ import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
@@ -38,10 +39,14 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
     @Mapping(value = {"${agile.base-service.save:}"}, method = RequestMethod.POST)
     default RETURN save() throws Exception{
         I inParam = AgileParam.getInParam(getInVoClass());
+        return save(inParam);
+    }
+
+    default RETURN save(I inParam) throws Exception {
         E data = ObjectUtil.to(inParam,new TypeReference<>(getEntityClass()));
         validate(inParam, Default.class, Insert.class);
         validateEntity(data, Default.class, Insert.class);
-        
+
         try {
             data.setCreateTime(new Date());
             UserDetails currentUser = SecurityUtil.currentUser();
