@@ -6,6 +6,7 @@ import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.annotation.Remark;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
+import cloud.agileframework.common.util.file.FileUtil;
 import cloud.agileframework.common.util.file.ResponseFile;
 import cloud.agileframework.common.util.file.poi.CellInfo;
 import cloud.agileframework.common.util.file.poi.ExcelFile;
@@ -16,16 +17,19 @@ import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
+import cloud.agileframework.spring.util.MultipartFileUtil;
 import cloud.agileframework.spring.util.POIUtilOfMultipartFile;
 import cloud.agileframework.validate.group.Insert;
 import cloud.agileframework.validate.group.Query;
 import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -35,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 /**
@@ -122,19 +127,20 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     default Object template() throws Exception {
         try {
             String filePath = templatePath();
+            File file;
             if (filePath.startsWith("classpath:")) {
                 String substring = filePath.substring(10);
-                if (!substring.startsWith("/")) {
-                    substring = "/" + substring;
-                }
-                URL classpath = getClass().getResource(substring);
-                if (classpath == null) {
+                InputStream stream = getClass().getResourceAsStream(FileUtil.parseClassPath(substring));
+                if (stream == null) {
                     throw new NoSuchFileException(filePath);
                 }
-                filePath = classpath.getPath();
+                file = new File(FileUtil.parseFilePath(MultipartFileUtil.getTempPath() + substring));
+                FileUtils.copyInputStreamToFile(stream, file);
+            } else {
+                filePath = URLDecoder.decode(filePath, Charset.defaultCharset().name());
+                file = new File(filePath);
             }
-            filePath = URLDecoder.decode(filePath, Charset.defaultCharset().name());
-            File file = new File(filePath);
+            
             if (!file.exists()) {
                 throw new NoSuchFileException(filePath);
             }
