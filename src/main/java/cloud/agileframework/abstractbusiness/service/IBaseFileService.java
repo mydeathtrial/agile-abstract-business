@@ -13,33 +13,49 @@ import cloud.agileframework.common.util.file.poi.ExcelFile;
 import cloud.agileframework.common.util.file.poi.POIUtil;
 import cloud.agileframework.common.util.file.poi.SheetData;
 import cloud.agileframework.common.util.object.ObjectUtil;
+import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
+import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.spring.util.MultipartFileUtil;
 import cloud.agileframework.spring.util.POIUtilOfMultipartFile;
+import cloud.agileframework.validate.ValidateMsg;
+import cloud.agileframework.validate.ValidateUtil;
 import cloud.agileframework.validate.group.Insert;
 import cloud.agileframework.validate.group.Query;
 import lombok.SneakyThrows;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFComment;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 /**
@@ -56,8 +72,12 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      * @return 列表
      */
     @SneakyThrows
-    @Mapping(value = {"${agile.base-service.upload:/upload}"}, method = RequestMethod.POST)
+    @Mapping(value = {"${agile.base-service.upload:/upload}", "/import"}, method = RequestMethod.POST)
     default RETURN upload(@AgileInParam("file") MultipartFile file) throws Exception {
+        return upload(file, false);
+    }
+
+    default RETURN upload(MultipartFile file, boolean exportAllIfError) throws Exception {
         Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
         List<CellInfo> cellInfos = remarks.stream()
                 .filter(r -> r.getAnnotation().excelHead())
@@ -67,10 +87,83 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                         .build())
                 .collect(Collectors.toList());
 
-        List<I> data = POIUtilOfMultipartFile.readExcel(file, getInVoClass(), cellInfos);
+        List<I> data = Lists.newArrayList();
+        TypeReference<I> typeReference = new TypeReference<>(getInVoClass());
 
-        validate(data, Insert.class);
+        //清空表
+        boolean haveError = false;
+        Workbook workbook = POIUtilOfMultipartFile.readFile(file);
+        for (Sheet sheet : workbook) {
+            List<String> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
 
+            Iterator<Row> rowIt = sheet.rowIterator();
+            int rowNum = 0;
+            while (rowIt.hasNext()) {
+                if (rowNum == 0) {
+                    rowNum++;
+                    continue;
+                }
+                Row row = rowIt.next();
+                I rowData = POIUtil.readRow(typeReference, columnInfo, row);
+                DictionaryUtil.cover(rowData);
+                List<ValidateMsg> msg = ValidateUtil.validate(rowData, Insert.class);
+                if (msg.isEmpty()) {
+                    if (!exportAllIfError) {
+                        data.add(rowData);
+                        sheet.removeRow(row);
+                    }
+                } else {
+                    Map<String, ValidateMsg> map = msg.stream().collect(Collectors.toMap(ValidateMsg::getItem, a -> a));
+                    for(int i=0;i<columnInfo.size();i++){
+                        String columnKey = columnInfo.get(i);
+                        ValidateMsg error = map.get(columnKey);
+                        if(error==null){
+                            continue;
+                        }
+                        Cell cell = row.getCell(i);
+                        cell  = cell==null?row.createCell(i):cell;
+
+                        Font font = workbook.createFont();
+                        font.setColor(IndexedColors.WHITE.getIndex());
+                        Object itemValue = error.getItemValue();
+                        CellStyle style = workbook.createCellStyle();
+                        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+
+                        style.setBorderBottom(BorderStyle.THICK);
+                        style.setBottomBorderColor(IndexedColors.RED1.getIndex());
+                        style.setBorderLeft(BorderStyle.THICK);
+                        style.setLeftBorderColor(IndexedColors.RED1.getIndex());
+                        style.setBorderRight(BorderStyle.THICK);
+                        style.setRightBorderColor(IndexedColors.RED1.getIndex());
+                        style.setBorderTop(BorderStyle.THICK);
+                        style.setTopBorderColor(IndexedColors.RED1.getIndex());
+                        cell.setCellStyle(style);
+                        POIUtil.addCellValue(workbook, cell, itemValue==null?"":itemValue.toString(), font);
+                        POIUtil.addComment(workbook, cell, error.getMessage());
+                    }
+                    haveError = true;
+                }
+
+            }
+        }
+
+        handleSuccessData(data);
+
+        if (haveError) {
+            AgileReturn.add(new ExcelFile("导入失败数据", workbook));
+            return RETURN.PARAMETER_ERROR;
+        }
+        return RETURN.SUCCESS;
+    }
+
+    /**
+     * 处理读取的excel数据
+     *
+     * @param data 数据
+     * @throws Exception 异常
+     */
+    default void handleSuccessData(List<I> data) throws Exception {
         final TypeReference<List<E>> toClass = new TypeReference<List<E>>() {
         };
         ParameterizedType parameterizedType = (ParameterizedType) toClass.getType();
@@ -80,7 +173,6 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         toClass.replace(parameterizedType);
 
         saveData(ObjectUtil.to(data, toClass));
-        return RETURN.SUCCESS;
     }
 
     /**
@@ -89,7 +181,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      * @return 列表
      */
     @SneakyThrows
-    @Mapping(value = {"${agile.base-service.download:/download}"}, method = {RequestMethod.POST, RequestMethod.GET})
+    @Mapping(value = {"${agile.base-service.download:/download}","/export"}, method = {RequestMethod.POST, RequestMethod.GET})
     default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
@@ -140,7 +232,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 filePath = URLDecoder.decode(filePath, Charset.defaultCharset().name());
                 file = new File(filePath);
             }
-            
+
             if (!file.exists()) {
                 throw new NoSuchFileException(filePath);
             }
@@ -176,7 +268,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     }
 
     default POIUtil.VERSION version() {
-        return POIUtil.VERSION.V2008;
+        return POIUtil.VERSION.V2007;
     }
 
 }
