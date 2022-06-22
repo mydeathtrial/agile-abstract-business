@@ -19,6 +19,7 @@ import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
+import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.spring.util.MultipartFileUtil;
 import cloud.agileframework.spring.util.POIUtilOfMultipartFile;
 import cloud.agileframework.validate.ValidateMsg;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -172,7 +174,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 getEntityClass());
         toClass.replace(parameterizedType);
 
-        saveData(ObjectUtil.to(data, toClass));
+        Objects.requireNonNull(BeanUtil.getBean(getClass())).saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
     }
 
     /**

@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -43,6 +44,12 @@ public interface BaseService {
     @NotAPI
     default ISecurityService security() {
         return BeanUtil.getBean(ISecurityService.class);
+    }
+
+    @NotAPI
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    default <A> void saveDataWithNewTransaction(List<A> data) throws NoSuchFieldException, IllegalAccessException {
+        saveData(data);
     }
 
     @NotAPI
