@@ -1,5 +1,6 @@
 package cloud.agileframework.abstractbusiness.service;
 
+import cloud.agileframework.abstractbusiness.pojo.EntityExistsException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
@@ -151,6 +152,9 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
             result = toSingleOutVo(queryById(getEntityClass(), id));
         } else {
             result = queryOne(getOutVoClass(), getEntityClass(), id, detailSql());
+        }
+        if(result == null){
+            throw new EntityExistsException(id);
         }
         handingDetailVo(result);
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
