@@ -101,11 +101,12 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             Iterator<Row> rowIt = sheet.rowIterator();
             int rowNum = 0;
             while (rowIt.hasNext()) {
+                Row row = rowIt.next();
                 if (rowNum == 0) {
                     rowNum++;
                     continue;
                 }
-                Row row = rowIt.next();
+               
                 I rowData = POIUtil.readRow(typeReference, columnInfo, row);
                 DictionaryUtil.cover(rowData);
                 List<ValidateMsg> msg = ValidateUtil.validate(rowData, Insert.class);
