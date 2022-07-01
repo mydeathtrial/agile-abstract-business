@@ -70,6 +70,11 @@
       "name": "agile.base-service.template",
       "type": "java.lang.String",
       "description": "模板."
+    },
+    {
+      "name": "agile.base-service.importMaxNum",
+      "type": "java.lang.Integer",
+      "description": "最大导入条数."
     }
   ]
 }

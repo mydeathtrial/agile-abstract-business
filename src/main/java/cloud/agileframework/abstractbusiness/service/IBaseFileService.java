@@ -17,6 +17,7 @@ import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.spring.util.BeanUtil;
@@ -39,10 +40,6 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFComment;
-import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -68,6 +65,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends IBaseQueryService<E, I, O> {
+
     /**
      * 列表查询
      *
@@ -98,6 +96,12 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         for (Sheet sheet : workbook) {
             List<String> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
 
+            int rowTotal = sheet.getLastRowNum() - 1;
+            Integer max = BeanUtil.getApplicationContext().getEnvironment().getProperty("agile.base-service.importMaxNum", Integer.class, 500);
+            if (rowTotal > max) {
+                throw new AgileArgumentException("最大只允许导入" + max + "条数据");
+            }
+
             Iterator<Row> rowIt = sheet.rowIterator();
             int rowNum = 0;
             while (rowIt.hasNext()) {
@@ -106,7 +110,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                     rowNum++;
                     continue;
                 }
-               
+
                 I rowData = POIUtil.readRow(typeReference, columnInfo, row);
                 DictionaryUtil.cover(rowData);
                 List<ValidateMsg> msg = ValidateUtil.validate(rowData, Insert.class);
@@ -117,14 +121,14 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                     }
                 } else {
                     Map<String, ValidateMsg> map = msg.stream().collect(Collectors.toMap(ValidateMsg::getItem, a -> a));
-                    for(int i=0;i<columnInfo.size();i++){
+                    for (int i = 0; i < columnInfo.size(); i++) {
                         String columnKey = columnInfo.get(i);
                         ValidateMsg error = map.get(columnKey);
-                        if(error==null){
+                        if (error == null) {
                             continue;
                         }
                         Cell cell = row.getCell(i);
-                        cell  = cell==null?row.createCell(i):cell;
+                        cell = cell == null ? row.createCell(i) : cell;
 
                         Font font = workbook.createFont();
                         font.setColor(IndexedColors.WHITE.getIndex());
@@ -142,7 +146,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                         style.setBorderTop(BorderStyle.THICK);
                         style.setTopBorderColor(IndexedColors.RED1.getIndex());
                         cell.setCellStyle(style);
-                        POIUtil.addCellValue(workbook, cell, itemValue==null?"":itemValue.toString(), font);
+                        POIUtil.addCellValue(workbook, cell, itemValue == null ? "" : itemValue.toString(), font);
                         POIUtil.addComment(workbook, cell, error.getMessage());
                     }
                     haveError = true;
@@ -184,7 +188,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      * @return 列表
      */
     @SneakyThrows
-    @Mapping(value = {"${agile.base-service.download:/download}","/export"}, method = {RequestMethod.POST, RequestMethod.GET})
+    @Mapping(value = {"${agile.base-service.download:/download}", "/export"}, method = {RequestMethod.POST, RequestMethod.GET})
     default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
