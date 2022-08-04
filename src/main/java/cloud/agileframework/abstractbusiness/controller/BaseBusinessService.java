@@ -20,7 +20,11 @@ import javax.persistence.UniqueConstraint;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -73,11 +77,11 @@ public class BaseBusinessService {
 
                         List<Object> demoList = dao.findAll(demo)
                                 .stream()
-                                .filter(n->!Objects.equals(dao.getId(n),dao.getId(data)))
+                                .filter(n -> !Objects.equals(dao.getId(n), dao.getId(data)))
                                 .collect(Collectors.toList());
 
                         if (!demoList.isEmpty()) {
-                            return new ValidateMsg( fieldValue + "不允许重复", fieldName, fieldValue);
+                            return new ValidateMsg(fieldValue + "不允许重复", fieldName, fieldValue);
                         }
                         return null;
                     }).filter(Objects::nonNull).collect(Collectors.toList());
@@ -112,7 +116,7 @@ public class BaseBusinessService {
                         });
                 List<Object> demoList = dao.findAll(testData)
                         .stream()
-                        .filter(n->!Objects.equals(dao.getId(n),dao.getId(data)))
+                        .filter(n -> !Objects.equals(dao.getId(n), dao.getId(data)))
                         .collect(Collectors.toList());
                 if (!demoList.isEmpty()) {
                     return Lists.newArrayList(new ValidateMsg(String.join(",", remarks) + "组合不能重复", "", ""));

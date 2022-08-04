@@ -3,11 +3,11 @@ package cloud.agileframework.abstractbusiness.service;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.mvc.annotation.AgileInParam;
+import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.validate.annotation.Validate;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.List;
@@ -26,37 +26,43 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
     /**
      * 根据主键删除
      *
-     * @param id 主键
      * @return 响应
      */
     @Validate(value = ID, nullable = false)
     @Mapping(value = {"${agile.base-service.deleteById:/{id}}"}, method = RequestMethod.DELETE)
-    default RETURN delete(@PathVariable(ID) String id) throws Exception {
+    default RETURN deleteById() throws Exception {
+        delete(AgileParam.getInParam(ID, String.class));
+        return RETURN.SUCCESS;
+    }
+
+    default void delete(String id) throws Exception {
         if (dataManager() != null) {
             dataManager().sync().deleteById(id);
-            return RETURN.SUCCESS;
+            return;
         }
         deleteById(id, getEntityClass());
-        return RETURN.SUCCESS;
     }
 
     /**
      * 根据主键集合批量删除数据
      *
-     * @param ids 主键集合
      * @return 响应
      */
     @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.deleteByIds:}"}, method = RequestMethod.DELETE)
-    default RETURN delete(@AgileInParam(ID) List<String> ids) throws Exception {
+    default RETURN deleteByIds() throws Exception {
+        delete(AgileParam.getInParam(ID, new TypeReference<List<String>>(){}));
+        return RETURN.SUCCESS;
+    }
+
+    default void delete(List<String> ids) throws Exception {
         if (dataManager() != null) {
             for (String id : ids) {
                 delete(id);
             }
-            return RETURN.SUCCESS;
+            return;
         }
         deleteByIds(ids, getEntityClass());
-        return RETURN.SUCCESS;
     }
 
     /**

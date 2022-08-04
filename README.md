@@ -20,7 +20,8 @@
 
 #### 步骤 1: 下载包
 
-您可以从[最新稳定版本]下载包(https://github.com/mydeathtrial/agile-abstract-business/releases). 该包已上传至maven中央仓库，可在pom中直接声明引用
+您可以从[最新稳定版本]下载包(https://github.com/mydeathtrial/agile-abstract-business/releases).
+该包已上传至maven中央仓库，可在pom中直接声明引用
 
 以版本agile-abstract-business-2.1.0.M5.jar为例。
 
@@ -109,7 +110,8 @@ API地址模板 相关参数说明：
 + id主键，不区分类型，组件自动转换
 + page分页页号，从1计算
 + size分页页容量
-+ sorts排序字段，数组格式，`-`开头字段意为倒叙 其中查询和增加修改都接收实体对象信息参数，不限传参形式，参数转换器会根据`model`对应的实体属性与传参进行模糊转换
++ sorts排序字段，数组格式，`-`开头字段意为倒叙
+  其中查询和增加修改都接收实体对象信息参数，不限传参形式，参数转换器会根据`model`对应的实体属性与传参进行模糊转换
   成功转换后，经过hibernate-validate验证，进入抽象业务操作。后续会详细说明该部分使用技巧。
 
 ```

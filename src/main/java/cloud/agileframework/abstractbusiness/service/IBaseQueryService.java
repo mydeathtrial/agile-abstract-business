@@ -20,14 +20,11 @@ import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
 import com.alibaba.druid.sql.SQLUtils;
-import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.sql.ast.SQLOrderBy;
 import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.alibaba.druid.sql.parser.ParserException;
 import lombok.SneakyThrows;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -153,7 +150,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
         } else {
             result = queryOne(getOutVoClass(), getEntityClass(), id, detailSql());
         }
-        if(result == null){
+        if (result == null) {
             throw new EntityExistsException(id);
         }
         handingDetailVo(result);
@@ -200,7 +197,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
             SortInfo column = sortColumn.get(i);
 
             SQLSelectOrderByItem order = new SQLSelectOrderByItem(SQLUtils.toSQLExpr(column.getProperty()));
-            if(!(order.getExpr() instanceof SQLPropertyExpr) && !(order.getExpr() instanceof SQLIdentifierExpr)){
+            if (!(order.getExpr() instanceof SQLPropertyExpr) && !(order.getExpr() instanceof SQLIdentifierExpr)) {
                 throw new ParserException();
             }
             sqlBuilder.append(column.isSort() ? column.getProperty() : column.getProperty() + " DESC ");

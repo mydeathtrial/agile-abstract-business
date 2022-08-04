@@ -187,9 +187,9 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
         DictionaryUtil.cover(o);
         return o;
     }
-    
-    default AbstractDictionaryDataManager<DictionaryDataBase> dataManager(){
-        if(!DictionaryDataBase.class.isAssignableFrom(getEntityClass())){
+
+    default AbstractDictionaryDataManager<DictionaryDataBase> dataManager() {
+        if (!DictionaryDataBase.class.isAssignableFrom(getEntityClass())) {
             return null;
         }
         TypeReference<AbstractDictionaryDataManager<DictionaryDataBase>> typeReference = new TypeReference<AbstractDictionaryDataManager<DictionaryDataBase>>() {

@@ -1,6 +1,5 @@
 package cloud.agileframework.abstractbusiness.service;
 
-import cloud.agileframework.abstractbusiness.pojo.EntityExistsException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
@@ -10,7 +9,6 @@ import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
-import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
@@ -40,13 +38,13 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
     @SneakyThrows
     @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.update:}"}, method = RequestMethod.PUT)
-    default RETURN update() throws Exception{
+    default RETURN update() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         return update(inParam);
     }
 
     default RETURN update(I inParam) throws Exception {
-        E data = ObjectUtil.to(inParam,new TypeReference<>(getEntityClass()));
+        E data = ObjectUtil.to(inParam, new TypeReference<>(getEntityClass()));
         validate(inParam, Default.class, Update.class);
         validateEntityExists(data);
         validateEntity(data, Default.class, Update.class);
@@ -54,10 +52,11 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
         try {
             data.setUpdateTime(new Date());
             UserDetails currentUser = SecurityUtil.currentUser();
-            if(currentUser instanceof CustomerUserDetails){
+            if (currentUser instanceof CustomerUserDetails) {
                 data.setUpdateUser(((CustomerUserDetails) currentUser).id());
             }
-        }catch (Exception ignored){}
+        } catch (Exception ignored) {
+        }
 
         if (dataManager() != null) {
             dataManager().sync().updateOfNotNull((DictionaryDataBase) data);
