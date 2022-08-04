@@ -1,0 +1,1674 @@
+{
+  "basePath": "/v2",
+  "definitions": {
+    "HttpStatus": {
+      "enum": [
+        "SC_FORBIDDEN",
+        "SC_NO_CONTENT",
+        "SC_NON_AUTHORITATIVE_INFORMATION",
+        "SC_METHOD_NOT_ALLOWED",
+        "SC_PROCESSING",
+        "SC_PARTIAL_CONTENT",
+        "SC_RESET_CONTENT",
+        "SC_UNPROCESSABLE_ENTITY",
+        "SC_ACCEPTED",
+        "SC_MOVED_TEMPORARILY",
+        "SC_FAILED_DEPENDENCY",
+        "SC_MULTI_STATUS",
+        "SC_NOT_MODIFIED",
+        "SC_NOT_FOUND",
+        "SC_REQUEST_TIMEOUT",
+        "SC_GATEWAY_TIMEOUT",
+        "SC_NOT_ACCEPTABLE",
+        "SC_OK",
+        "SC_INSUFFICIENT_STORAGE",
+        "SC_EXPECTATION_FAILED",
+        "SC_NOT_IMPLEMENTED",
+        "SC_USE_PROXY",
+        "SC_UNSUPPORTED_MEDIA_TYPE",
+        "SC_TEMPORARY_REDIRECT",
+        "SC_REQUESTED_RANGE_NOT_SATISFIABLE",
+        "SC_LENGTH_REQUIRED",
+        "SC_REQUEST_TOO_LONG",
+        "SC_PROXY_AUTHENTICATION_REQUIRED",
+        "SC_METHOD_FAILURE",
+        "SC_BAD_GATEWAY",
+        "SC_REQUEST_URI_TOO_LONG",
+        "SC_CONTINUE",
+        "SC_UNAUTHORIZED",
+        "SC_PAYMENT_REQUIRED",
+        "SC_MOVED_PERMANENTLY",
+        "SC_LOCKED",
+        "SC_HTTP_VERSION_NOT_SUPPORTED",
+        "SC_SWITCHING_PROTOCOLS",
+        "SC_BAD_REQUEST",
+        "SC_INTERNAL_SERVER_ERROR",
+        "SC_SEE_OTHER",
+        "SC_CONFLICT",
+        "SC_GONE",
+        "SC_INSUFFICIENT_SPACE_ON_RESOURCE",
+        "SC_SERVICE_UNAVAILABLE",
+        "SC_PRECONDITION_FAILED",
+        "SC_CREATED",
+        "SC_MULTIPLE_CHOICES"
+      ],
+      "example": "OK",
+      "type": "string"
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about Swagger",
+    "url": "http://swagger.io"
+  },
+  "host": "petstore.swagger.io",
+  "info": {
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "contact": {
+      "email": "apiteam@swagger.io"
+    },
+    "description": "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters.",
+    "termsOfService": "http://swagger.io/terms/",
+    "title": "Swagger Petstore",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/sys/sysDept/tree": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "组织机构表树形",
+        "operationId": "tree_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "items": {
+                    "properties": {
+                      "deptName": {
+                        "required": [
+                          "deptName"
+                        ],
+                        "title": "名称",
+                        "type": "string"
+                      },
+                      "orderNum": {
+                        "required": [
+                          "orderNum"
+                        ],
+                        "title": "排序",
+                        "type": "string"
+                      },
+                      "sysRoleId": {
+                        "required": [
+                          "sysRoleId"
+                        ],
+                        "title": "角色主键",
+                        "type": "string"
+                      },
+                      "sysDeptId": {
+                        "required": [
+                          "sysDeptId"
+                        ],
+                        "title": "主键",
+                        "type": "string"
+                      },
+                      "delFlag": {
+                        "required": [
+                          "delFlag"
+                        ],
+                        "title": "",
+                        "type": "boolean"
+                      },
+                      "inside": {
+                        "required": [
+                          "inside"
+                        ],
+                        "title": "是否内置",
+                        "type": "string"
+                      },
+                      "path": {
+                        "required": [
+                          "path"
+                        ],
+                        "title": "路径",
+                        "type": "string"
+                      },
+                      "secrecy": {
+                        "required": [
+                          "secrecy"
+                        ],
+                        "title": "密级",
+                        "type": "string"
+                      },
+                      "children": {
+                        "items": {
+                          "properties": {
+                            "deptName": {
+                              "required": [
+                                "deptName"
+                              ],
+                              "title": "名称",
+                              "type": "string"
+                            },
+                            "orderNum": {
+                              "required": [
+                                "orderNum"
+                              ],
+                              "title": "排序",
+                              "type": "string"
+                            },
+                            "sysRoleId": {
+                              "required": [
+                                "sysRoleId"
+                              ],
+                              "title": "角色主键",
+                              "type": "string"
+                            },
+                            "sysDeptId": {
+                              "required": [
+                                "sysDeptId"
+                              ],
+                              "title": "主键",
+                              "type": "string"
+                            },
+                            "delFlag": {
+                              "required": [
+                                "delFlag"
+                              ],
+                              "title": "",
+                              "type": "boolean"
+                            },
+                            "inside": {
+                              "required": [
+                                "inside"
+                              ],
+                              "title": "是否内置",
+                              "type": "string"
+                            },
+                            "path": {
+                              "required": [
+                                "path"
+                              ],
+                              "title": "路径",
+                              "type": "string"
+                            },
+                            "secrecy": {
+                              "required": [
+                                "secrecy"
+                              ],
+                              "title": "密级",
+                              "type": "string"
+                            },
+                            "children": {
+                              "items": {
+                                "type": "object"
+                              },
+                              "title": "子节点",
+                              "type": "array"
+                            },
+                            "id": {
+                              "title": "唯一标识",
+                              "type": "string"
+                            },
+                            "area": {
+                              "required": [
+                                "area"
+                              ],
+                              "title": "地区",
+                              "type": "string"
+                            },
+                            "namePath": {
+                              "required": [
+                                "namePath"
+                              ],
+                              "title": "中文路径",
+                              "type": "string"
+                            },
+                            "manager": {
+                              "required": [
+                                "manager"
+                              ],
+                              "title": "部门负责人",
+                              "type": "string"
+                            },
+                            "parentId": {
+                              "title": "父级唯一标识",
+                              "type": "string"
+                            },
+                            "organization": {
+                              "required": [
+                                "organization"
+                              ],
+                              "title": "是否是组织",
+                              "type": "string"
+                            },
+                            "deptCode": {
+                              "required": [
+                                "deptCode"
+                              ],
+                              "title": "组织机构代码",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "title": "子节点",
+                        "type": "array"
+                      },
+                      "id": {
+                        "title": "唯一标识",
+                        "type": "string"
+                      },
+                      "area": {
+                        "required": [
+                          "area"
+                        ],
+                        "title": "地区",
+                        "type": "string"
+                      },
+                      "namePath": {
+                        "required": [
+                          "namePath"
+                        ],
+                        "title": "中文路径",
+                        "type": "string"
+                      },
+                      "manager": {
+                        "required": [
+                          "manager"
+                        ],
+                        "title": "部门负责人",
+                        "type": "string"
+                      },
+                      "parentId": {
+                        "title": "父级唯一标识",
+                        "type": "string"
+                      },
+                      "organization": {
+                        "required": [
+                          "organization"
+                        ],
+                        "title": "是否是组织",
+                        "type": "string"
+                      },
+                      "deptCode": {
+                        "required": [
+                          "deptCode"
+                        ],
+                        "title": "组织机构代码",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "title": "查询结果",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "组织机构表树形",
+        "tags": [
+          "组织机构表"
+        ]
+      }
+    },
+    "/api/sys/sysDept/page": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "组织机构表分页",
+        "operationId": "page_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "请求参数",
+            "required": true,
+            "schema": {
+              "properties": {
+                "area": {
+                  "title": "地区",
+                  "type": "string"
+                },
+                "deptName": {
+                  "title": "名称",
+                  "type": "string"
+                },
+                "namePath": {
+                  "title": "中文路径",
+                  "type": "string"
+                },
+                "manager": {
+                  "title": "部门负责人",
+                  "type": "string"
+                },
+                "pageSize": {
+                  "default": 10,
+                  "format": "int32",
+                  "title": "每页大小",
+                  "type": "integer"
+                },
+                "orderNum": {
+                  "title": "排序",
+                  "type": "string"
+                },
+                "sysRoleId": {
+                  "title": "角色主键",
+                  "type": "string"
+                },
+                "sysDeptId": {
+                  "title": "主键",
+                  "type": "string"
+                },
+                "inside": {
+                  "title": "是否内置",
+                  "type": "string"
+                },
+                "delFlag": {
+                  "title": "",
+                  "type": "boolean"
+                },
+                "pageNum": {
+                  "default": 1,
+                  "format": "int32",
+                  "title": "第几页",
+                  "type": "integer"
+                },
+                "path": {
+                  "title": "路径",
+                  "type": "string"
+                },
+                "secrecy": {
+                  "title": "密级",
+                  "type": "string"
+                },
+                "organization": {
+                  "title": "是否是组织",
+                  "type": "string"
+                },
+                "deptCode": {
+                  "title": "组织机构代码",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "properties": {
+                    "total": {
+                      "default": 20,
+                      "format": "int32",
+                      "title": "总条数",
+                      "type": "integer"
+                    },
+                    "context": {
+                      "items": {
+                        "properties": {
+                          "deptName": {
+                            "required": [
+                              "deptName"
+                            ],
+                            "title": "名称",
+                            "type": "string"
+                          },
+                          "orderNum": {
+                            "required": [
+                              "orderNum"
+                            ],
+                            "title": "排序",
+                            "type": "string"
+                          },
+                          "sysRoleId": {
+                            "required": [
+                              "sysRoleId"
+                            ],
+                            "title": "角色主键",
+                            "type": "string"
+                          },
+                          "sysDeptId": {
+                            "required": [
+                              "sysDeptId"
+                            ],
+                            "title": "主键",
+                            "type": "string"
+                          },
+                          "delFlag": {
+                            "required": [
+                              "delFlag"
+                            ],
+                            "title": "",
+                            "type": "boolean"
+                          },
+                          "inside": {
+                            "required": [
+                              "inside"
+                            ],
+                            "title": "是否内置",
+                            "type": "string"
+                          },
+                          "path": {
+                            "required": [
+                              "path"
+                            ],
+                            "title": "路径",
+                            "type": "string"
+                          },
+                          "secrecy": {
+                            "required": [
+                              "secrecy"
+                            ],
+                            "title": "密级",
+                            "type": "string"
+                          },
+                          "area": {
+                            "required": [
+                              "area"
+                            ],
+                            "title": "地区",
+                            "type": "string"
+                          },
+                          "namePath": {
+                            "required": [
+                              "namePath"
+                            ],
+                            "title": "中文路径",
+                            "type": "string"
+                          },
+                          "manager": {
+                            "required": [
+                              "manager"
+                            ],
+                            "title": "部门负责人",
+                            "type": "string"
+                          },
+                          "parentId": {
+                            "required": [
+                              "parentId"
+                            ],
+                            "title": "上级",
+                            "type": "string"
+                          },
+                          "organization": {
+                            "required": [
+                              "organization"
+                            ],
+                            "title": "是否是组织",
+                            "type": "string"
+                          },
+                          "deptCode": {
+                            "required": [
+                              "deptCode"
+                            ],
+                            "title": "组织机构代码",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "area",
+                          "deptName",
+                          "namePath",
+                          "manager",
+                          "orderNum",
+                          "sysRoleId",
+                          "sysDeptId",
+                          "inside",
+                          "delFlag",
+                          "parentId",
+                          "path",
+                          "secrecy",
+                          "organization",
+                          "deptCode"
+                        ],
+                        "type": "object"
+                      },
+                      "title": "当前页面数据",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "total"
+                  ],
+                  "title": "查询结果",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "组织机构表分页",
+        "tags": [
+          "组织机构表"
+        ]
+      }
+    },
+    "/api/sys/sysDept/store": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "组织机构表批量导入",
+        "operationId": "import_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "导入文件",
+            "in": "formData",
+            "name": "请求参数",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "组织机构表批量导入",
+        "tags": [
+          "组织机构表"
+        ]
+      },
+      "get": {
+        "description": "当导出数量小于1000条数据时，直接提供浏览器文件下载；\n当导出数量超过1000条数据时,系统自动将导出文件转至下载中心，并返回响应提示",
+        "operationId": "export_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "唯一标识",
+            "in": "query",
+            "items": {
+              "type": "string"
+            },
+            "name": "id",
+            "required": true,
+            "type": "array"
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "导出组织机构表",
+        "tags": [
+          "组织机构表"
+        ]
+      }
+    },
+    "/api/sys/sysDept/{id}": {
+      "get": {
+        "description": "",
+        "operationId": "findById_SysDept",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "properties": {
+                    "deptName": {
+                      "required": [
+                        "deptName"
+                      ],
+                      "title": "名称",
+                      "type": "string"
+                    },
+                    "orderNum": {
+                      "required": [
+                        "orderNum"
+                      ],
+                      "title": "排序",
+                      "type": "string"
+                    },
+                    "sysRoleId": {
+                      "required": [
+                        "sysRoleId"
+                      ],
+                      "title": "角色主键",
+                      "type": "string"
+                    },
+                    "sysDeptId": {
+                      "required": [
+                        "sysDeptId"
+                      ],
+                      "title": "主键",
+                      "type": "string"
+                    },
+                    "delFlag": {
+                      "required": [
+                        "delFlag"
+                      ],
+                      "title": "",
+                      "type": "boolean"
+                    },
+                    "inside": {
+                      "required": [
+                        "inside"
+                      ],
+                      "title": "是否内置",
+                      "type": "string"
+                    },
+                    "path": {
+                      "required": [
+                        "path"
+                      ],
+                      "title": "路径",
+                      "type": "string"
+                    },
+                    "secrecy": {
+                      "required": [
+                        "secrecy"
+                      ],
+                      "title": "密级",
+                      "type": "string"
+                    },
+                    "area": {
+                      "required": [
+                        "area"
+                      ],
+                      "title": "地区",
+                      "type": "string"
+                    },
+                    "namePath": {
+                      "required": [
+                        "namePath"
+                      ],
+                      "title": "中文路径",
+                      "type": "string"
+                    },
+                    "manager": {
+                      "required": [
+                        "manager"
+                      ],
+                      "title": "部门负责人",
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "required": [
+                        "parentId"
+                      ],
+                      "title": "上级",
+                      "type": "string"
+                    },
+                    "organization": {
+                      "required": [
+                        "organization"
+                      ],
+                      "title": "是否是组织",
+                      "type": "string"
+                    },
+                    "deptCode": {
+                      "required": [
+                        "deptCode"
+                      ],
+                      "title": "组织机构代码",
+                      "type": "string"
+                    }
+                  },
+                  "title": "查询结果",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "根据主键查询组织机构表",
+        "tags": [
+          "组织机构表"
+        ]
+      }
+    },
+    "/api/sys/sysDept": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "",
+        "operationId": "add_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "请求参数",
+            "required": true,
+            "schema": {
+              "properties": {
+                "area": {
+                  "title": "地区",
+                  "type": "string"
+                },
+                "deptName": {
+                  "title": "名称",
+                  "type": "string"
+                },
+                "namePath": {
+                  "title": "中文路径",
+                  "type": "string"
+                },
+                "manager": {
+                  "title": "部门负责人",
+                  "type": "string"
+                },
+                "orderNum": {
+                  "title": "排序",
+                  "type": "string"
+                },
+                "sysRoleId": {
+                  "title": "角色主键",
+                  "type": "string"
+                },
+                "sysDeptId": {
+                  "title": "主键",
+                  "type": "string"
+                },
+                "inside": {
+                  "title": "是否内置",
+                  "type": "string"
+                },
+                "delFlag": {
+                  "title": "",
+                  "type": "boolean"
+                },
+                "path": {
+                  "title": "路径",
+                  "type": "string"
+                },
+                "secrecy": {
+                  "title": "密级",
+                  "type": "string"
+                },
+                "organization": {
+                  "title": "是否是组织",
+                  "type": "string"
+                },
+                "deptCode": {
+                  "title": "组织机构代码",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "properties": {
+                    "deptName": {
+                      "required": [
+                        "deptName"
+                      ],
+                      "title": "名称",
+                      "type": "string"
+                    },
+                    "orderNum": {
+                      "required": [
+                        "orderNum"
+                      ],
+                      "title": "排序",
+                      "type": "string"
+                    },
+                    "sysRoleId": {
+                      "required": [
+                        "sysRoleId"
+                      ],
+                      "title": "角色主键",
+                      "type": "string"
+                    },
+                    "sysDeptId": {
+                      "required": [
+                        "sysDeptId"
+                      ],
+                      "title": "主键",
+                      "type": "string"
+                    },
+                    "delFlag": {
+                      "required": [
+                        "delFlag"
+                      ],
+                      "title": "",
+                      "type": "boolean"
+                    },
+                    "inside": {
+                      "required": [
+                        "inside"
+                      ],
+                      "title": "是否内置",
+                      "type": "string"
+                    },
+                    "path": {
+                      "required": [
+                        "path"
+                      ],
+                      "title": "路径",
+                      "type": "string"
+                    },
+                    "secrecy": {
+                      "required": [
+                        "secrecy"
+                      ],
+                      "title": "密级",
+                      "type": "string"
+                    },
+                    "area": {
+                      "required": [
+                        "area"
+                      ],
+                      "title": "地区",
+                      "type": "string"
+                    },
+                    "namePath": {
+                      "required": [
+                        "namePath"
+                      ],
+                      "title": "中文路径",
+                      "type": "string"
+                    },
+                    "manager": {
+                      "required": [
+                        "manager"
+                      ],
+                      "title": "部门负责人",
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "required": [
+                        "parentId"
+                      ],
+                      "title": "上级",
+                      "type": "string"
+                    },
+                    "organization": {
+                      "required": [
+                        "organization"
+                      ],
+                      "title": "是否是组织",
+                      "type": "string"
+                    },
+                    "deptCode": {
+                      "required": [
+                        "deptCode"
+                      ],
+                      "title": "组织机构代码",
+                      "type": "string"
+                    }
+                  },
+                  "title": "新增后的数据",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "新建组织机构表",
+        "tags": [
+          "组织机构表"
+        ]
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "",
+        "operationId": "update_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "请求参数",
+            "required": true,
+            "schema": {
+              "properties": {
+                "area": {
+                  "title": "地区",
+                  "type": "string"
+                },
+                "deptName": {
+                  "title": "名称",
+                  "type": "string"
+                },
+                "namePath": {
+                  "title": "中文路径",
+                  "type": "string"
+                },
+                "manager": {
+                  "title": "部门负责人",
+                  "type": "string"
+                },
+                "orderNum": {
+                  "title": "排序",
+                  "type": "string"
+                },
+                "sysRoleId": {
+                  "title": "角色主键",
+                  "type": "string"
+                },
+                "sysDeptId": {
+                  "title": "主键",
+                  "type": "string"
+                },
+                "inside": {
+                  "title": "是否内置",
+                  "type": "string"
+                },
+                "delFlag": {
+                  "title": "",
+                  "type": "boolean"
+                },
+                "path": {
+                  "title": "路径",
+                  "type": "string"
+                },
+                "secrecy": {
+                  "title": "密级",
+                  "type": "string"
+                },
+                "organization": {
+                  "title": "是否是组织",
+                  "type": "string"
+                },
+                "id": {
+                  "description": "当为数组时，视为批量修改。该参数与主键参数至少有一个为非空",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "唯一标识",
+                  "type": "array"
+                },
+                "deptCode": {
+                  "title": "组织机构代码",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "properties": {
+                    "deptName": {
+                      "required": [
+                        "deptName"
+                      ],
+                      "title": "名称",
+                      "type": "string"
+                    },
+                    "orderNum": {
+                      "required": [
+                        "orderNum"
+                      ],
+                      "title": "排序",
+                      "type": "string"
+                    },
+                    "sysRoleId": {
+                      "required": [
+                        "sysRoleId"
+                      ],
+                      "title": "角色主键",
+                      "type": "string"
+                    },
+                    "sysDeptId": {
+                      "required": [
+                        "sysDeptId"
+                      ],
+                      "title": "主键",
+                      "type": "string"
+                    },
+                    "delFlag": {
+                      "required": [
+                        "delFlag"
+                      ],
+                      "title": "",
+                      "type": "boolean"
+                    },
+                    "inside": {
+                      "required": [
+                        "inside"
+                      ],
+                      "title": "是否内置",
+                      "type": "string"
+                    },
+                    "path": {
+                      "required": [
+                        "path"
+                      ],
+                      "title": "路径",
+                      "type": "string"
+                    },
+                    "secrecy": {
+                      "required": [
+                        "secrecy"
+                      ],
+                      "title": "密级",
+                      "type": "string"
+                    },
+                    "area": {
+                      "required": [
+                        "area"
+                      ],
+                      "title": "地区",
+                      "type": "string"
+                    },
+                    "namePath": {
+                      "required": [
+                        "namePath"
+                      ],
+                      "title": "中文路径",
+                      "type": "string"
+                    },
+                    "manager": {
+                      "required": [
+                        "manager"
+                      ],
+                      "title": "部门负责人",
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "required": [
+                        "parentId"
+                      ],
+                      "title": "上级",
+                      "type": "string"
+                    },
+                    "organization": {
+                      "required": [
+                        "organization"
+                      ],
+                      "title": "是否是组织",
+                      "type": "string"
+                    },
+                    "deptCode": {
+                      "required": [
+                        "deptCode"
+                      ],
+                      "title": "组织机构代码",
+                      "type": "string"
+                    }
+                  },
+                  "title": "更新后的数据",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "修改组织机构表",
+        "tags": [
+          "组织机构表"
+        ]
+      },
+      "delete": {
+        "description": "",
+        "operationId": "delete_SysDept",
+        "parameters": [
+          {
+            "description": "身份会话令牌",
+            "in": "header",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "防篡改令牌：RSA加密(body参数)",
+            "in": "header",
+            "name": "falsifyToken",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "唯一标识",
+            "in": "query",
+            "items": {
+              "type": "string"
+            },
+            "name": "id",
+            "required": true,
+            "type": "array"
+          },
+          {
+            "description": "防重放令牌：RSA加密(时间戳+_SPLIT_+8位随机数)",
+            "in": "header",
+            "name": "replayToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "schema": {
+              "properties": {
+                "head": {
+                  "properties": {
+                    "msg": {
+                      "description": "可用于前端冒泡提示框",
+                      "example": "服务执行成功",
+                      "title": "响应信息",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "6位业务代码，第一位（0代表成功，1代表失败，2代表错误，3代表警告）。第二、三位代表业务领域编号。后三位代表实际业务服务",
+                      "example": "000000",
+                      "title": "业务代码",
+                      "type": "string"
+                    },
+                    "ip": {
+                      "example": "11.66.77.116",
+                      "title": "服务器IP",
+                      "type": "string"
+                    },
+                    "status": {
+                      "$ref": "#/definitions/HttpStatus"
+                    }
+                  },
+                  "required": [
+                    "msg",
+                    "code",
+                    "ip",
+                    "status"
+                  ],
+                  "title": "响应头",
+                  "type": "object"
+                },
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "head",
+                "result"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "summary": "删除组织机构表",
+        "tags": [
+          "组织机构表"
+        ]
+      }
+    }
+  },
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "swagger": "2.0",
+  "tags": [
+    {
+      "description": "管理组织机构表",
+      "name": "组织机构表"
+    }
+  ]
+}
