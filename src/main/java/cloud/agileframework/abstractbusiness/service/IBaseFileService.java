@@ -1,5 +1,6 @@
 package cloud.agileframework.abstractbusiness.service;
 
+import cloud.agileframework.abstractbusiness.pojo.ImportFileFormatException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
@@ -50,7 +51,6 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,13 +88,16 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 .collect(Collectors.toList());
 
         List<I> data = Lists.newArrayList();
+        List<I> errorData = Lists.newArrayList();
         TypeReference<I> typeReference = new TypeReference<>(getInVoClass());
 
         //清空表
-        boolean haveError = false;
         Workbook workbook = POIUtilOfMultipartFile.readFile(file);
         for (Sheet sheet : workbook) {
             List<String> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
+            if(columnInfo.stream().anyMatch(Objects::isNull)){
+                throw new ImportFileFormatException();
+            }
 
             int rowTotal = sheet.getLastRowNum() - 1;
             Integer max = BeanUtil.getApplicationContext().getEnvironment().getProperty("agile.base-service.importMaxNum", Integer.class, 500);
@@ -102,24 +105,34 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 throw new AgileArgumentException("最大只允许导入" + max + "条数据");
             }
 
-            Iterator<Row> rowIt = sheet.rowIterator();
+            int maxRowNum = sheet.getLastRowNum();
             int rowNum = 0;
-            while (rowIt.hasNext()) {
-                Row row = rowIt.next();
+            while (rowNum <= maxRowNum) {
+
                 if (rowNum == 0) {
                     rowNum++;
                     continue;
                 }
+                Row row = sheet.getRow(rowNum);
 
                 I rowData = POIUtil.readRow(typeReference, columnInfo, row);
+                if(rowData==null){
+                    rowNum++;
+                    continue;
+                }
                 DictionaryUtil.cover(rowData);
-                List<ValidateMsg> msg = ValidateUtil.validate(rowData, Insert.class);
+
+                List<ValidateMsg> msg = validateRowData(rowData);
                 if (msg.isEmpty()) {
+                    data.add(rowData);
                     if (!exportAllIfError) {
-                        data.add(rowData);
-                        sheet.removeRow(row);
+                        sheet.shiftRows(rowNum, maxRowNum, -1);
+                        maxRowNum--;
+                    } else {
+                        rowNum++;
                     }
                 } else {
+                    errorData.add(rowData);
                     Map<String, ValidateMsg> map = msg.stream().collect(Collectors.toMap(ValidateMsg::getItem, a -> a));
                     for (int i = 0; i < columnInfo.size(); i++) {
                         String columnKey = columnInfo.get(i);
@@ -131,7 +144,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                         cell = cell == null ? row.createCell(i) : cell;
 
                         Font font = workbook.createFont();
-                        font.setColor(IndexedColors.WHITE.getIndex());
+                        font.setColor(IndexedColors.RED.getIndex());
                         Object itemValue = error.getItemValue();
                         CellStyle style = workbook.createCellStyle();
                         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -149,19 +162,24 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                         POIUtil.addCellValue(workbook, cell, itemValue == null ? "" : itemValue.toString(), font);
                         POIUtil.addComment(workbook, cell, error.getMessage());
                     }
-                    haveError = true;
+                    rowNum++;
                 }
 
             }
         }
-
-        handleSuccessData(data);
-
-        if (haveError) {
-            AgileReturn.add(new ExcelFile("导入失败数据", workbook));
+        if (errorData.isEmpty() || !exportAllIfError) {
+            handleSuccessData(data);
+        }
+        
+        if (!errorData.isEmpty()) {
+            handleErrorData(errorData, workbook);
             return RETURN.PARAMETER_ERROR;
         }
         return RETURN.SUCCESS;
+    }
+
+    default List<ValidateMsg> validateRowData(I rowData) throws Exception {
+        return ValidateUtil.validate(rowData, Insert.class);
     }
 
     /**
@@ -180,6 +198,10 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         toClass.replace(parameterizedType);
 
         Objects.requireNonNull(BeanUtil.getBean(getClass())).saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
+    }
+
+    default void handleErrorData(List<I> errorData, Workbook workbook) throws Exception {
+        AgileReturn.add(new ExcelFile("导入失败数据", workbook));
     }
 
     /**
