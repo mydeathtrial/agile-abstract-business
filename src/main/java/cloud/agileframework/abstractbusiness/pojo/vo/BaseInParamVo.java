@@ -65,14 +65,19 @@ public class BaseInParamVo implements Serializable {
         SQLExpr expr = SQLUtils.toSQLExpr(sql, DbType.mysql);
         if (expr instanceof SQLQueryExpr) {
             SQLOrderBy orderBy = ((SQLQueryExpr) expr).getSubQuery().getQueryBlock().getOrderBy();
-            sortInfos.forEach(sortInfo -> {
+            if (orderBy == null) {
+                orderBy = new SQLOrderBy();
+                ((SQLQueryExpr) expr).getSubQuery().getQueryBlock().setOrderBy(orderBy);
+            }
+            
+            for (SortInfo sortInfo : sortInfos) {
                 SQLSelectOrderByItem order = new SQLSelectOrderByItem(SQLUtils.toSQLExpr(sortInfo.getProperty()));
                 if (!(order.getExpr() instanceof SQLPropertyExpr) && !(order.getExpr() instanceof SQLIdentifierExpr)) {
                     throw new ParserException();
                 }
                 order.setType(sortInfo.isSort() ? SQLOrderingSpecification.ASC : SQLOrderingSpecification.DESC);
                 orderBy.addItem(order);
-            });
+            }
         }
         return expr.toString();
     }
