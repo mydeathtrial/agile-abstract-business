@@ -5,7 +5,6 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
-import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
@@ -19,11 +18,6 @@ import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
-import com.alibaba.druid.sql.SQLUtils;
-import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
-import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
-import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
-import com.alibaba.druid.sql.parser.ParserException;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -56,7 +50,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
 
     default RETURN list(I inParam) throws Exception {
         validate(inParam, Query.class);
-        String sql = IBaseQueryService.parseOrder(inParam, listSql());
+        String sql = parseOrder(inParam, listSql());
         List<O> result;
         if (sql != null) {
             result = list(getOutVoClass(), inParam, sql);
@@ -87,7 +81,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
 
     default RETURN page(I inParam) throws Exception {
         validate(inParam, PageQuery.class);
-        String sql = IBaseQueryService.parseOrder(inParam, listSql());
+        String sql = parseOrder(inParam, listSql());
         Page<?> page;
         if (sql != null) {
             page = page(getOutVoClass(), inParam, sql);
@@ -176,32 +170,17 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     default void handingDetailVo(O vo) throws Exception {
     }
 
-
-    static String parseOrder(BaseInParamVo inParam, String sql) {
+    /**
+     * 处理排序sql
+     *
+     * @param inParam 入参
+     * @param sql     sql语句
+     * @return 处理完排序的sql
+     */
+    default String parseOrder(BaseInParamVo inParam, String sql) {
         if (inParam == null) {
             return sql;
         }
-        List<SortInfo> sortColumn = inParam.getSortColumn();
-        if (sortColumn == null || sortColumn.isEmpty()) {
-            return sql;
-        }
-        if (sql.endsWith(";")) {
-            sql = sql.substring(0, sql.length() - 1);
-        }
-        StringBuilder sqlBuilder = new StringBuilder(sql);
-        sqlBuilder.append(" order by ");
-        for (int i = 0; i < sortColumn.size(); i++) {
-            if (i > 0) {
-                sqlBuilder.append(",");
-            }
-            SortInfo column = sortColumn.get(i);
-
-            SQLSelectOrderByItem order = new SQLSelectOrderByItem(SQLUtils.toSQLExpr(column.getProperty()));
-            if (!(order.getExpr() instanceof SQLPropertyExpr) && !(order.getExpr() instanceof SQLIdentifierExpr)) {
-                throw new ParserException();
-            }
-            sqlBuilder.append(column.isSort() ? column.getProperty() : column.getProperty() + " DESC ");
-        }
-        return sqlBuilder.toString();
+        return inParam.parseOrder(sql);
     }
 }

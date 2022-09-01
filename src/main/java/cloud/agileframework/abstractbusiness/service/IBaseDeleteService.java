@@ -51,7 +51,8 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
     @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.deleteByIds:}"}, method = RequestMethod.DELETE)
     default RETURN deleteByIds() throws Exception {
-        delete(AgileParam.getInParam(ID, new TypeReference<List<String>>(){}));
+        delete(AgileParam.getInParam(ID, new TypeReference<List<String>>() {
+        }));
         return RETURN.SUCCESS;
     }
 

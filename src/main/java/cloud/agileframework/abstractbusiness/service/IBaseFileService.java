@@ -1,10 +1,11 @@
 package cloud.agileframework.abstractbusiness.service;
 
-import cloud.agileframework.abstractbusiness.pojo.ImportFileFormatException;
+import cloud.agileframework.abstractbusiness.annotation.Excel;
+import cloud.agileframework.abstractbusiness.annotation.ExcelDeserialize;
+import cloud.agileframework.abstractbusiness.annotation.ExcelSerialize;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.common.annotation.Remark;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.file.FileUtil;
@@ -14,7 +15,7 @@ import cloud.agileframework.common.util.file.poi.ExcelFile;
 import cloud.agileframework.common.util.file.poi.POIUtil;
 import cloud.agileframework.common.util.file.poi.SheetData;
 import cloud.agileframework.common.util.object.ObjectUtil;
-import cloud.agileframework.dictionary.util.DictionaryUtil;
+import cloud.agileframework.dictionary.util.ConvertDicAnnotation;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
@@ -46,6 +47,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -78,13 +81,9 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     }
 
     default RETURN upload(MultipartFile file, boolean exportAllIfError) throws Exception {
-        Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
-        List<CellInfo> cellInfos = remarks.stream()
-                .filter(r -> r.getAnnotation().excelHead())
-                .map(r -> CellInfo.builder()
-                        .setKey(r.getMember().getName())
-                        .setShowName(r.getAnnotation().value())
-                        .build())
+        Set<ClassUtil.Target<Excel>> annotations = ClassUtil.getAllFieldAnnotation(getInVoClass(), Excel.class);
+        List<CellInfo> cellInfos = annotations.stream()
+                .map(IBaseFileService::getCellInfo)
                 .collect(Collectors.toList());
 
         List<I> data = Lists.newArrayList();
@@ -94,10 +93,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         //清空表
         Workbook workbook = POIUtilOfMultipartFile.readFile(file);
         for (Sheet sheet : workbook) {
-            List<String> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
-            if(columnInfo.stream().anyMatch(Objects::isNull)){
-                throw new ImportFileFormatException();
-            }
+            List<CellInfo> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
 
             int rowTotal = sheet.getLastRowNum() - 1;
             Integer max = BeanUtil.getApplicationContext().getEnvironment().getProperty("agile.base-service.importMaxNum", Integer.class, 500);
@@ -106,27 +102,22 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             }
 
             int maxRowNum = sheet.getLastRowNum();
-            int rowNum = 0;
+            int rowNum = 1;
             while (rowNum <= maxRowNum) {
-
-                if (rowNum == 0) {
-                    rowNum++;
-                    continue;
-                }
                 Row row = sheet.getRow(rowNum);
 
-                I rowData = POIUtil.readRow(typeReference, columnInfo, row);
-                if(rowData==null){
+                I rowData = POIUtil.readRow(typeReference, columnInfo, row, workbook);
+                if (rowData == null) {
                     rowNum++;
                     continue;
                 }
-                DictionaryUtil.cover(rowData);
+                ConvertDicAnnotation.cover(rowData);
 
                 List<ValidateMsg> msg = validateRowData(rowData);
                 if (msg.isEmpty()) {
                     data.add(rowData);
                     if (!exportAllIfError) {
-                        sheet.shiftRows(rowNum, maxRowNum, -1);
+                        sheet.shiftRows(rowNum + 1, maxRowNum + 1, -1);
                         maxRowNum--;
                     } else {
                         rowNum++;
@@ -135,7 +126,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                     errorData.add(rowData);
                     Map<String, ValidateMsg> map = msg.stream().collect(Collectors.toMap(ValidateMsg::getItem, a -> a));
                     for (int i = 0; i < columnInfo.size(); i++) {
-                        String columnKey = columnInfo.get(i);
+                        String columnKey = columnInfo.get(i).getKey();
                         ValidateMsg error = map.get(columnKey);
                         if (error == null) {
                             continue;
@@ -170,7 +161,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         if (errorData.isEmpty() || !exportAllIfError) {
             handleSuccessData(data);
         }
-        
+
         if (!errorData.isEmpty()) {
             handleErrorData(errorData, workbook);
             return RETURN.PARAMETER_ERROR;
@@ -214,7 +205,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
         validate(inParam, Query.class);
-        String sql = IBaseQueryService.parseOrder(inParam, listSql());
+        String sql = parseOrder(inParam, listSql());
         List<?> list;
         if (sql != null) {
             list = list(getOutVoClass(), inParam, sql);
@@ -224,13 +215,9 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
 
         List<O> result = toOutVo(list);
 
-        Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getOutVoClass(), Remark.class);
+        Set<ClassUtil.Target<Excel>> remarks = ClassUtil.getAllFieldAnnotation(getOutVoClass(), Excel.class);
         List<CellInfo> cellInfos = remarks.stream()
-                .map(r -> CellInfo.builder()
-                        .setKey(r.getMember().getName())
-                        .setShowName(r.getAnnotation().value())
-                        .setSort(r.getAnnotation().sort())
-                        .build())
+                .map(IBaseFileService::getCellInfo)
                 .collect(Collectors.toList());
 
         Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).setData(new ArrayList<>(result)).build());
@@ -267,19 +254,59 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             }
             return new ResponseFile(file.getName(), file);
         } catch (NoSuchFileException e) {
-            Set<ClassUtil.Target<Remark>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Remark.class);
+            Set<ClassUtil.Target<Excel>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Excel.class);
             List<CellInfo> cellInfos = remarks.stream()
-                    .map(r -> CellInfo.builder()
-                            .setKey(r.getMember().getName())
-                            .setShowName(r.getAnnotation().value())
-                            .setSort(r.getAnnotation().sort())
-                            .build())
+                    .map(IBaseFileService::getCellInfo)
                     .collect(Collectors.toList());
 
             Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).build());
 
             return new ExcelFile(fileName(), workbook);
         }
+    }
+
+    /**
+     * 构建excel列信息
+     *
+     * @param target 标注Excel注解的对象
+     * @return 列信息
+     */
+    static CellInfo getCellInfo(ClassUtil.Target<Excel> target) {
+        CellInfo.Builder builder = CellInfo.builder()
+                .setKey(target.getMember().getName())
+                .setName(target.getAnnotation().name().trim())
+                .setSort(target.getAnnotation().sort())
+                .setType(target.getAnnotation().type());
+        try {
+            Class<? extends ExcelSerialize> serializeClass = target.getAnnotation().serialize();
+            if (ExcelSerialize.class != serializeClass) {
+                ExcelSerialize obj = ClassUtil.newInstance(serializeClass);
+                Method method = serializeClass.getMethod("to", Object.class);
+                builder.setSerialize(a -> {
+                    try {
+                        return method.invoke(obj, a);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            Class<? extends ExcelDeserialize> deserializeClass = target.getAnnotation().deserialize();
+            if (ExcelDeserialize.class != deserializeClass) {
+                ExcelDeserialize obj = ClassUtil.newInstance(deserializeClass);
+                Method method = deserializeClass.getMethod("to", Object.class);
+                builder.setDeserialize(a -> {
+                    try {
+                        return method.invoke(obj, a);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return builder.build();
     }
 
     /**
