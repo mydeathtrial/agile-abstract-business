@@ -29,9 +29,12 @@ import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.ValidateUtil;
 import cloud.agileframework.validate.group.Insert;
 import cloud.agileframework.validate.group.Query;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -47,13 +50,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.NoSuchFileException;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -220,7 +226,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 .map(IBaseFileService::getCellInfo)
                 .collect(Collectors.toList());
 
-        Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).setData(new ArrayList<>(result)).build());
+        Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).setData((JSONArray) JSON.toJSON(result)).build());
 
         return new ExcelFile(fileName(), workbook);
     }
@@ -273,19 +279,28 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      */
     static CellInfo getCellInfo(ClassUtil.Target<Excel> target) {
         CellInfo.Builder builder = CellInfo.builder()
-                .setKey(target.getMember().getName())
-                .setName(target.getAnnotation().name().trim())
-                .setSort(target.getAnnotation().sort())
-                .setType(target.getAnnotation().type());
+                .key(target.getMember().getName())
+                .name(target.getAnnotation().name().trim())
+                .sort(target.getAnnotation().sort())
+                .type(target.getAnnotation().type());
         try {
             Class<? extends ExcelSerialize> serializeClass = target.getAnnotation().serialize();
             if (ExcelSerialize.class != serializeClass) {
                 ExcelSerialize obj = ClassUtil.newInstance(serializeClass);
                 Method method = serializeClass.getMethod("to", Object.class);
-                builder.setSerialize(a -> {
+                builder.serialize(a -> {
                     try {
                         return method.invoke(obj, a);
                     } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } else if (getType(target) == Date.class && !StringUtils.isBlank(target.getAnnotation().format())) {
+                builder.serialize(a -> {
+                    try {
+                        SimpleDateFormat simple = new SimpleDateFormat(target.getAnnotation().format());
+                        return simple.format((Date) a);
+                    } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 });
@@ -295,10 +310,22 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             if (ExcelDeserialize.class != deserializeClass) {
                 ExcelDeserialize obj = ClassUtil.newInstance(deserializeClass);
                 Method method = deserializeClass.getMethod("to", Object.class);
-                builder.setDeserialize(a -> {
+                builder.deserialize(a -> {
                     try {
                         return method.invoke(obj, a);
                     } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } else if (getType(target) == Date.class && !StringUtils.isBlank(target.getAnnotation().format())) {
+                builder.deserialize(a -> {
+                    try {
+                        if (a instanceof Date || a == null) {
+                            return a;
+                        }
+                        SimpleDateFormat simple = new SimpleDateFormat(target.getAnnotation().format());
+                        return simple.parse(a.toString());
+                    } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 });
@@ -307,6 +334,16 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             e.printStackTrace();
         }
         return builder.build();
+    }
+
+    static Class<?> getType(ClassUtil.Target<Excel> target) {
+        Member member = target.getMember();
+        if(member instanceof Field){
+            return ((Field) member).getType();
+        } else if (member instanceof Method) {
+            return ((Method) member).getReturnType();
+        }
+        return Object.class;
     }
 
     /**
