@@ -31,6 +31,7 @@ import cloud.agileframework.validate.group.Insert;
 import cloud.agileframework.validate.group.Query;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FileUtils;
@@ -93,7 +94,6 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 .collect(Collectors.toList());
 
         List<I> data = Lists.newArrayList();
-        List<I> errorData = Lists.newArrayList();
         TypeReference<I> typeReference = new TypeReference<>(getInVoClass());
 
         //清空表
@@ -110,72 +110,54 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             int maxRowNum = sheet.getLastRowNum();
             int rowNum = 1;
             while (rowNum <= maxRowNum) {
-                Row row = sheet.getRow(rowNum);
+                Row row = sheet.getRow(rowNum++);
 
                 I rowData = POIUtil.readRow(typeReference, columnInfo, row, workbook);
-                if (rowData == null) {
-                    rowNum++;
-                    continue;
-                }
                 ConvertDicAnnotation.cover(rowData);
-
-                List<ValidateMsg> msg = validateRowData(rowData);
-                if (msg.isEmpty()) {
-                    data.add(rowData);
-                    if (!exportAllIfError) {
-                        sheet.shiftRows(rowNum + 1, maxRowNum + 1, -1);
-                        maxRowNum--;
-                    } else {
-                        rowNum++;
-                    }
-                } else {
-                    errorData.add(rowData);
-                    Map<String, ValidateMsg> map = msg.stream().collect(Collectors.toMap(ValidateMsg::getItem, a -> a));
-                    for (int i = 0; i < columnInfo.size(); i++) {
-                        String columnKey = columnInfo.get(i).getKey();
-                        ValidateMsg error = map.get(columnKey);
-                        if (error == null) {
-                            continue;
-                        }
-                        Cell cell = row.getCell(i);
-                        cell = cell == null ? row.createCell(i) : cell;
-
-                        Font font = workbook.createFont();
-                        font.setColor(IndexedColors.RED.getIndex());
-                        Object itemValue = error.getItemValue();
-                        CellStyle style = workbook.createCellStyle();
-                        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                        style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-
-                        style.setBorderBottom(BorderStyle.THICK);
-                        style.setBottomBorderColor(IndexedColors.RED1.getIndex());
-                        style.setBorderLeft(BorderStyle.THICK);
-                        style.setLeftBorderColor(IndexedColors.RED1.getIndex());
-                        style.setBorderRight(BorderStyle.THICK);
-                        style.setRightBorderColor(IndexedColors.RED1.getIndex());
-                        style.setBorderTop(BorderStyle.THICK);
-                        style.setTopBorderColor(IndexedColors.RED1.getIndex());
-                        cell.setCellStyle(style);
-                        POIUtil.addCellValue(workbook, cell, itemValue == null ? "" : itemValue.toString(), font);
-                        POIUtil.addComment(workbook, cell, error.getMessage());
-                    }
-                    rowNum++;
-                }
-
+                data.add(rowData);
             }
         }
-        if (errorData.isEmpty() || !exportAllIfError) {
-            handleSuccessData(data);
+
+        List<ProxyData<I>> success = Lists.newArrayList();
+        List<ProxyData<I>> error = Lists.newArrayList();
+        List<ProxyData<I>> allData = data.stream().map(ProxyData::new).collect(Collectors.toList());
+        for (ProxyData<I> in : allData) {
+            List<ValidateMsg> validateMsg = validateRowData(data, in.in);
+            in.setMsg(validateMsg);
+            if (validateMsg.isEmpty()) {
+                success.add(in);
+            } else {
+                error.add(in);
+            }
         }
 
-        if (!errorData.isEmpty()) {
-            handleErrorData(errorData, workbook);
-            return RETURN.PARAMETER_ERROR;
+        if (error.isEmpty()) {
+            handleSuccessData(success.stream().map(a -> a.in).collect(Collectors.toList()));
+            return RETURN.SUCCESS;
+        } else if (exportAllIfError) {
+            handleSuccessData(success.stream().map(a -> a.in).collect(Collectors.toList()));
+            handleErrorData(error);
+            exportExcel(allData);
+        } else {
+            handleErrorData(error);
+            exportExcel(error);
         }
-        return RETURN.SUCCESS;
+
+        return RETURN.PARAMETER_ERROR;
+
     }
 
-    default List<ValidateMsg> validateRowData(I rowData) throws Exception {
+    @Data
+    class ProxyData<I> {
+        private I in;
+        private List<ValidateMsg> msg;
+
+        public ProxyData(I in) {
+            this.in = in;
+        }
+    }
+
+    default List<ValidateMsg> validateRowData(List<I> data, I rowData) throws Exception {
         return ValidateUtil.validate(rowData, Insert.class);
     }
 
@@ -197,7 +179,68 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         Objects.requireNonNull(BeanUtil.getBean(getClass())).saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
     }
 
-    default void handleErrorData(List<I> errorData, Workbook workbook) throws Exception {
+    default void handleErrorData(List<ProxyData<I>> proxyData) throws Exception {
+
+    }
+
+    default void exportExcel(List<ProxyData<I>> proxyData) throws Exception {
+        Object templateFile = template();
+        Workbook workbook;
+        if (templateFile instanceof ResponseFile) {
+            workbook = POIUtil.readFile(((ResponseFile) templateFile).getFileName(), ((ResponseFile) templateFile).getInputStream());
+        } else if (templateFile instanceof ExcelFile) {
+            workbook = ((ExcelFile) templateFile).getWorkbook();
+        } else {
+            throw new AgileArgumentException("未找到合适的错误数据存储文件格式");
+        }
+        Set<ClassUtil.Target<Excel>> annotations = ClassUtil.getAllFieldAnnotation(getInVoClass(), Excel.class);
+        List<CellInfo> cellInfos = annotations.stream()
+                .map(IBaseFileService::getCellInfo)
+                .collect(Collectors.toList());
+
+
+        for (Sheet sheet : workbook) {
+            List<CellInfo> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
+            if (columnInfo.isEmpty()) {
+                continue;
+            }
+            for (int rowNum = 0; rowNum < proxyData.size(); rowNum++) {
+                ProxyData<I> proxyDataRow = proxyData.get(rowNum);
+                Map<String, ValidateMsg> map = proxyDataRow.getMsg().stream().collect(Collectors.toMap(ValidateMsg::getItem, row -> row));
+                Row row = sheet.createRow(rowNum + 1);
+                for (int colNum = 0; colNum < columnInfo.size(); colNum++) {
+                    String columnKey = columnInfo.get(colNum).getKey();
+                    ValidateMsg error = map.get(columnKey);
+                    Cell cell = row.createCell(colNum);
+                    if (error == null) {
+                        Object value = ObjectUtil.getFieldValue(proxyDataRow.in, columnKey);
+                        String text = value == null ? "" : value.toString();
+                        POIUtil.addCellValue(workbook, cell, text, workbook.createFont());
+                        continue;
+                    }
+
+                    Font font = workbook.createFont();
+                    font.setColor(IndexedColors.RED.getIndex());
+                    Object itemValue = error.getItemValue();
+                    CellStyle style = workbook.createCellStyle();
+                    style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                    style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+
+                    style.setBorderBottom(BorderStyle.THICK);
+                    style.setBottomBorderColor(IndexedColors.RED1.getIndex());
+                    style.setBorderLeft(BorderStyle.THICK);
+                    style.setLeftBorderColor(IndexedColors.RED1.getIndex());
+                    style.setBorderRight(BorderStyle.THICK);
+                    style.setRightBorderColor(IndexedColors.RED1.getIndex());
+                    style.setBorderTop(BorderStyle.THICK);
+                    style.setTopBorderColor(IndexedColors.RED1.getIndex());
+                    cell.setCellStyle(style);
+                    POIUtil.addCellValue(workbook, cell, itemValue == null ? "" : itemValue.toString(), font);
+                    POIUtil.addComment(workbook, cell, error.getMessage());
+                }
+            }
+        }
+
         AgileReturn.add(new ExcelFile("导入失败数据", workbook));
     }
 
@@ -338,7 +381,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
 
     static Class<?> getType(ClassUtil.Target<Excel> target) {
         Member member = target.getMember();
-        if(member instanceof Field){
+        if (member instanceof Field) {
             return ((Field) member).getType();
         } else if (member instanceof Method) {
             return ((Method) member).getReturnType();
