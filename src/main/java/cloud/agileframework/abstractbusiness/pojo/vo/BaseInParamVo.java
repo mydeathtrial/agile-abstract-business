@@ -11,6 +11,7 @@ import com.alibaba.druid.sql.ast.SQLOrderingSpecification;
 import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.expr.SQLQueryExpr;
+import com.alibaba.druid.sql.ast.statement.SQLSelect;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.alibaba.druid.sql.parser.ParserException;
 import lombok.Data;
@@ -64,10 +65,11 @@ public class BaseInParamVo implements Serializable {
 
         SQLExpr expr = SQLUtils.toSQLExpr(sql, DbType.mysql);
         if (expr instanceof SQLQueryExpr) {
-            SQLOrderBy orderBy = ((SQLQueryExpr) expr).getSubQuery().getQueryBlock().getOrderBy();
+            SQLSelect subQuery = ((SQLQueryExpr) expr).getSubQuery();
+            SQLOrderBy orderBy = subQuery.getQueryBlock().getOrderBy();
             if (orderBy == null) {
                 orderBy = new SQLOrderBy();
-                ((SQLQueryExpr) expr).getSubQuery().getQueryBlock().setOrderBy(orderBy);
+                subQuery.getQueryBlock().setOrderBy(orderBy);
             }
             
             for (SortInfo sortInfo : sortInfos) {
@@ -78,6 +80,7 @@ public class BaseInParamVo implements Serializable {
                 order.setType(sortInfo.isSort() ? SQLOrderingSpecification.ASC : SQLOrderingSpecification.DESC);
                 orderBy.addItem(order);
             }
+            return subQuery.toString();
         }
         return expr.toString();
     }
