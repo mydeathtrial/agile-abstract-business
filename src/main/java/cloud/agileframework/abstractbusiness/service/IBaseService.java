@@ -5,7 +5,6 @@ import cloud.agileframework.abstractbusiness.pojo.EntityExistsException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
@@ -17,7 +16,6 @@ import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.mvc.annotation.NotAPI;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.spring.util.BeanUtil;
-import cloud.agileframework.spring.util.ServletUtil;
 import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.ValidateUtil;
 import org.apache.commons.lang3.reflect.TypeUtils;
@@ -25,7 +23,6 @@ import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,8 +51,7 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
     default void validate(Object pojo, Class<?>... groups) throws AgileArgumentException {
         List<ValidateMsg> list = ValidateUtil.validate(pojo, groups);
         if (!list.isEmpty()) {
-            ServletUtil.getCurrentRequest().setAttribute(Constant.RequestAttributeAbout.ATTRIBUTE_ERROR, list);
-            throw new AgileArgumentException();
+            throw new AgileArgumentException(list);
         }
     }
 
@@ -70,8 +66,7 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
     default void validateEntity(Object pojo, Class<?>... groups) throws AgileArgumentException {
         List<ValidateMsg> list = BaseBusinessService.toValidateMessages(pojo, groups);
         if (!list.isEmpty()) {
-            ServletUtil.getCurrentRequest().setAttribute(Constant.RequestAttributeAbout.ATTRIBUTE_ERROR, list);
-            throw new AgileArgumentException();
+            throw new AgileArgumentException(list);
         }
     }
 
@@ -90,13 +85,7 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
             id = dao.getId(pojo);
         }
         if (pojo == null || id == null) {
-            ServletUtil.getCurrentRequest()
-                    .setAttribute(Constant.RequestAttributeAbout.ATTRIBUTE_ERROR,
-                            Collections.singleton(
-                                    new ValidateMsg("主键不允许为空", dao.getIdField(getEntityClass()).getName(), null)
-                            )
-                    );
-            throw new AgileArgumentException();
+            throw new AgileArgumentException(new ValidateMsg("主键不允许为空", dao.getIdField(getEntityClass()).getName(), null));
         }
         List<A> old = dao.findAllByArrayId((Class<A>) pojo.getClass(), id);
         if (old == null || old.isEmpty()) {

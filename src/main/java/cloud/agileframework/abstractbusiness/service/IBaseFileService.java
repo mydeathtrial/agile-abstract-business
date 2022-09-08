@@ -99,7 +99,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         //清空表
         Workbook workbook = POIUtilOfMultipartFile.readFile(file);
         for (Sheet sheet : workbook) {
-            List<CellInfo> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
+            POIUtil.readColumnInfo(cellInfos, sheet);
 
             int rowTotal = sheet.getLastRowNum() - 1;
             Integer max = BeanUtil.getApplicationContext().getEnvironment().getProperty("agile.base-service.importMaxNum", Integer.class, 500);
@@ -112,7 +112,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             while (rowNum <= maxRowNum) {
                 Row row = sheet.getRow(rowNum++);
 
-                I rowData = POIUtil.readRow(typeReference, columnInfo, row, workbook);
+                I rowData = POIUtil.readRow(typeReference, cellInfos, row, workbook);
                 ConvertDicAnnotation.cover(rowData);
                 data.add(rowData);
             }
@@ -135,12 +135,9 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             handleSuccessData(success.stream().map(a -> a.in).collect(Collectors.toList()));
             return RETURN.SUCCESS;
         } else if (exportAllIfError) {
-            handleSuccessData(success.stream().map(a -> a.in).collect(Collectors.toList()));
-            handleErrorData(error);
-            exportExcel(allData);
+            handleErrorData(allData);
         } else {
             handleErrorData(error);
-            exportExcel(error);
         }
 
         return RETURN.PARAMETER_ERROR;
@@ -180,7 +177,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     }
 
     default void handleErrorData(List<ProxyData<I>> proxyData) throws Exception {
-
+        exportExcel(proxyData);
     }
 
     default void exportExcel(List<ProxyData<I>> proxyData) throws Exception {
@@ -200,18 +197,20 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
 
 
         for (Sheet sheet : workbook) {
-            List<CellInfo> columnInfo = POIUtil.readColumnInfo(cellInfos, sheet);
-            if (columnInfo.isEmpty()) {
-                continue;
-            }
+            POIUtil.readColumnInfo(cellInfos, sheet);
+            
             for (int rowNum = 0; rowNum < proxyData.size(); rowNum++) {
                 ProxyData<I> proxyDataRow = proxyData.get(rowNum);
                 Map<String, ValidateMsg> map = proxyDataRow.getMsg().stream().collect(Collectors.toMap(ValidateMsg::getItem, row -> row));
                 Row row = sheet.createRow(rowNum + 1);
-                for (int colNum = 0; colNum < columnInfo.size(); colNum++) {
-                    String columnKey = columnInfo.get(colNum).getKey();
+                
+                for(CellInfo cellInfo:cellInfos){
+                    if(cellInfo.getSort() < 0){
+                        continue;
+                    }
+                    String columnKey = cellInfo.getKey();
                     ValidateMsg error = map.get(columnKey);
-                    Cell cell = row.createCell(colNum);
+                    Cell cell = row.createCell(cellInfo.getSort());
                     if (error == null) {
                         Object value = ObjectUtil.getFieldValue(proxyDataRow.in, columnKey);
                         String text = value == null ? "" : value.toString();
@@ -325,7 +324,8 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 .key(target.getMember().getName())
                 .name(target.getAnnotation().name().trim())
                 .sort(target.getAnnotation().sort())
-                .type(target.getAnnotation().type());
+                .type(target.getAnnotation().type())
+                .require(target.getAnnotation().require());
         try {
             Class<? extends ExcelSerialize> serializeClass = target.getAnnotation().serialize();
             if (ExcelSerialize.class != serializeClass) {

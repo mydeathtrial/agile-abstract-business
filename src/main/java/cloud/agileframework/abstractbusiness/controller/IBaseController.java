@@ -4,7 +4,6 @@ import cloud.agileframework.abstractbusiness.pojo.EntityExistsException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.abstractbusiness.service.BaseService;
-import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
@@ -12,7 +11,6 @@ import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.spring.util.BeanUtil;
-import cloud.agileframework.spring.util.ServletUtil;
 import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.ValidateUtil;
 
@@ -39,8 +37,7 @@ public interface IBaseController<E extends IBaseEntity, O extends IBaseOutParamV
     default void validate(Object pojo, Class<?>... groups) throws AgileArgumentException {
         List<ValidateMsg> list = ValidateUtil.validate(pojo, groups);
         if (!list.isEmpty()) {
-            ServletUtil.getCurrentRequest().setAttribute(Constant.RequestAttributeAbout.ATTRIBUTE_ERROR, list);
-            throw new AgileArgumentException();
+            throw new AgileArgumentException(list);
         }
     }
 
@@ -54,8 +51,7 @@ public interface IBaseController<E extends IBaseEntity, O extends IBaseOutParamV
     default void validateEntity(Object pojo, Class<?>... groups) throws AgileArgumentException {
         List<ValidateMsg> list = BaseBusinessService.toValidateMessages(pojo, groups);
         if (!list.isEmpty()) {
-            ServletUtil.getCurrentRequest().setAttribute(Constant.RequestAttributeAbout.ATTRIBUTE_ERROR, list);
-            throw new AgileArgumentException();
+            throw new AgileArgumentException(list);
         }
     }
 

@@ -22,7 +22,7 @@ public @interface Excel {
     /**
      * 字段顺序
      */
-    int sort() default 0;
+    int sort() default -1;
 
     /**
      * 字段类型
@@ -30,6 +30,11 @@ public @interface Excel {
     Class<?> type() default Object.class;
     
     String format() default "";
+
+    /**
+     * 导入必填
+     */
+    boolean require() default true;
 
     /**
      * 序列化，导出用
