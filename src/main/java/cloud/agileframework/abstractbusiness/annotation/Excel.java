@@ -28,7 +28,7 @@ public @interface Excel {
      * 字段类型
      */
     Class<?> type() default Object.class;
-    
+
     String format() default "";
 
     /**

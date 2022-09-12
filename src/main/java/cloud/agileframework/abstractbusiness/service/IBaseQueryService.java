@@ -9,7 +9,6 @@ import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.dictionary.util.DictionaryUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.annotation.Mapping;
-import cloud.agileframework.mvc.annotation.NotAPI;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
@@ -18,7 +17,6 @@ import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
-import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -27,6 +25,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.SortedSet;
 
 /**
  * @author 佟盟
@@ -41,29 +40,28 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      *
      * @return 列表
      */
-    @SneakyThrows
     @Mapping(value = {"${agile.base-service.query:/list}"}, method = RequestMethod.POST)
     default RETURN list() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        return list(inParam);
+        List<O> result = list(inParam);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
+        return RETURN.SUCCESS;
     }
 
-    default RETURN list(I inParam) throws Exception {
-        validate(inParam, Query.class);
+    default List<O> list(I inParam) throws Exception {
+        genericService().validate(inParam, Query.class);
         String sql = parseOrder(inParam, listSql());
-        List<O> result;
+        List<E> list;
         if (sql != null) {
-            result = list(getOutVoClass(), inParam, sql);
+            list = genericService().list(getEntityClass(), inParam, sql);
         } else {
-            List<?> list = list(getEntityClass(), inParam);
-            result = toOutVo(list);
+            list = genericService().list(getEntityClass(), inParam);
         }
-
+        List<O> result = toOutVo(list);
         for (O vo : result) {
             handingListVo(vo);
         }
-        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
-        return RETURN.SUCCESS;
+        return result;
     }
 
     /**
@@ -72,28 +70,28 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      * @return 分页
      */
     @Validate(beanClass = BaseInParamVo.class)
-    @SneakyThrows
     @Mapping(value = {"${agile.base-service.page:/{pageNum}/{pageSize}}"}, method = RequestMethod.POST)
     default RETURN page() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        return page(inParam);
+        PageImpl<O> result = page(inParam);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
+        return RETURN.SUCCESS;
     }
 
-    default RETURN page(I inParam) throws Exception {
-        validate(inParam, PageQuery.class);
+    default PageImpl<O> page(I inParam) throws Exception {
+        genericService().validate(inParam, PageQuery.class);
         String sql = parseOrder(inParam, listSql());
-        Page<?> page;
+        Page<E> page;
         if (sql != null) {
-            page = page(getOutVoClass(), inParam, sql);
+            page = genericService().page(getEntityClass(), inParam, sql);
         } else {
-            page = page(getEntityClass(), inParam);
+            page = genericService().page(getEntityClass(), inParam);
         }
         PageImpl<O> result = new PageImpl<>(toOutVo(page.getContent()), page.getPageable(), page.getTotalElements());
         for (O vo : result.getContent()) {
             handingListVo(vo);
         }
-        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
-        return RETURN.SUCCESS;
+        return result;
     }
 
     /**
@@ -101,20 +99,21 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
      *
      * @return 树
      */
-    @SneakyThrows
     @Mapping(value = "${agile.base-service.tree:/tree}", method = {RequestMethod.GET, RequestMethod.POST})
     default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        return tree(inParam);
+        SortedSet<P> result = tree(inParam);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
+        return RETURN.SUCCESS;
     }
 
-    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree(I inParam) throws Exception {
+    default <L extends Serializable, P extends TreeBase<L, P>> SortedSet<P> tree(I inParam) throws Exception {
         if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
         }
-        validate(inParam, Query.class);
+        genericService().validate(inParam, Query.class);
 
-        List<?> list = list(getEntityClass(), inParam);
+        List<E> list = genericService().list(getEntityClass(), inParam);
 
         if (!TreeBase.class.isAssignableFrom(getOutVoClass())) {
             throw new AgileArgumentException("如果是树形结构查询，OutVo必须继承于TreeBase");
@@ -122,8 +121,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
 
         ArrayList<P> result = new ArrayList<>((Collection<? extends P>) toOutVo(list));
         L rootParentId = (L) getOutVoClass().getMethod("rootParentId").invoke(null);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, tree(result, rootParentId));
-        return RETURN.SUCCESS;
+        return genericService().tree(result, rootParentId);
     }
 
     /**
@@ -135,38 +133,39 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     @Validate(value = "id", nullable = false)
     @Mapping(value = {"${agile.base-service.queryById:/{id}}"}, method = RequestMethod.GET)
     default RETURN queryById(@AgileInParam("id") String id) throws Exception {
+        O result = queryOne(id);
+        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
+        return RETURN.SUCCESS;
+    }
+
+    default O queryOne(String id) throws Exception {
         O result;
 
         if (dataManager() != null) {
-            result = toSingleOutVo(DictionaryUtil.findById(dataManager().dataSource(), id));
+            result = toSingleOutVo((E) DictionaryUtil.findById(dataManager().dataSource(), id));
         } else if (detailSql() == null) {
-            result = toSingleOutVo(queryById(getEntityClass(), id));
+            result = toSingleOutVo(genericService().queryById(getEntityClass(), id));
         } else {
-            result = queryOne(getOutVoClass(), getEntityClass(), id, detailSql());
+            result = genericService().queryOne(getOutVoClass(), getEntityClass(), id, detailSql(), "id");
         }
         if (result == null) {
             throw new EntityExistsException(id);
         }
         handingDetailVo(result);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
-        return RETURN.SUCCESS;
+        return result;
     }
 
-    @NotAPI
     default String listSql() {
         return null;
     }
 
-    @NotAPI
     default String detailSql() {
         return null;
     }
 
-    @NotAPI
     default void handingListVo(O vo) throws Exception {
     }
 
-    @NotAPI
     default void handingDetailVo(O vo) throws Exception {
     }
 

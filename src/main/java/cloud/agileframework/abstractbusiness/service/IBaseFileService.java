@@ -32,7 +32,6 @@ import cloud.agileframework.validate.group.Query;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import lombok.Data;
-import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,7 +62,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,7 +79,6 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      *
      * @return 列表
      */
-    @SneakyThrows
     @Mapping(value = {"${agile.base-service.upload:/upload}", "/import"}, method = RequestMethod.POST)
     default RETURN upload(@AgileInParam("file") MultipartFile file) throws Exception {
         return upload(file, false);
@@ -173,7 +170,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 getEntityClass());
         toClass.replace(parameterizedType);
 
-        Objects.requireNonNull(BeanUtil.getBean(getClass())).saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
+        genericService().saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
     }
 
     default void handleErrorData(List<ProxyData<I>> proxyData) throws Exception {
@@ -198,14 +195,14 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
 
         for (Sheet sheet : workbook) {
             POIUtil.readColumnInfo(cellInfos, sheet);
-            
+
             for (int rowNum = 0; rowNum < proxyData.size(); rowNum++) {
                 ProxyData<I> proxyDataRow = proxyData.get(rowNum);
                 Map<String, ValidateMsg> map = proxyDataRow.getMsg().stream().collect(Collectors.toMap(ValidateMsg::getItem, row -> row));
                 Row row = sheet.createRow(rowNum + 1);
-                
-                for(CellInfo cellInfo:cellInfos){
-                    if(cellInfo.getSort() < 0){
+
+                for (CellInfo cellInfo : cellInfos) {
+                    if (cellInfo.getSort() < 0) {
                         continue;
                     }
                     String columnKey = cellInfo.getKey();
@@ -248,17 +245,16 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      *
      * @return 列表
      */
-    @SneakyThrows
     @Mapping(value = {"${agile.base-service.download:/download}", "/export"}, method = {RequestMethod.POST, RequestMethod.GET})
     default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        validate(inParam, Query.class);
+        genericService().validate(inParam, Query.class);
         String sql = parseOrder(inParam, listSql());
-        List<?> list;
+        List<E> list;
         if (sql != null) {
-            list = list(getOutVoClass(), inParam, sql);
+            list = genericService().list(getEntityClass(), inParam, sql);
         } else {
-            list = list(getEntityClass(), inParam);
+            list = genericService().list(getEntityClass(), inParam);
         }
 
         List<O> result = toOutVo(list);
@@ -278,7 +274,6 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      *
      * @return 列表
      */
-    @SneakyThrows
     @Mapping(value = {"${agile.base-service.template:/template}"}, method = {RequestMethod.GET, RequestMethod.POST})
     default Object template() throws Exception {
         try {

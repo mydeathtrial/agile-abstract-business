@@ -16,10 +16,12 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.alibaba.druid.sql.parser.ParserException;
 import lombok.Data;
 import lombok.ToString;
+import org.springframework.data.domain.Sort;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author 佟盟
@@ -71,7 +73,7 @@ public class BaseInParamVo implements Serializable {
                 orderBy = new SQLOrderBy();
                 subQuery.getQueryBlock().setOrderBy(orderBy);
             }
-            
+
             for (SortInfo sortInfo : sortInfos) {
                 SQLSelectOrderByItem order = new SQLSelectOrderByItem(SQLUtils.toSQLExpr(sortInfo.getProperty()));
                 if (!(order.getExpr() instanceof SQLPropertyExpr) && !(order.getExpr() instanceof SQLIdentifierExpr)) {
@@ -83,5 +85,20 @@ public class BaseInParamVo implements Serializable {
             return subQuery.toString();
         }
         return expr.toString();
+    }
+
+    public Sort sort() {
+        if (getSortColumn() == null || getSortColumn().isEmpty()) {
+            return Sort.unsorted();
+        }
+        List<SortInfo> sorts = getSortColumn();
+
+        List<Sort.Order> s = sorts.stream().map(sortInfo -> {
+            if (sortInfo.isSort()) {
+                return Sort.Order.desc(sortInfo.getProperty());
+            }
+            return Sort.Order.asc(sortInfo.getProperty());
+        }).collect(Collectors.toList());
+        return Sort.by(s);
     }
 }

@@ -12,7 +12,6 @@ import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
-import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,16 +38,15 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
      * @param inParam 入参
      * @return 列表
      */
-    @SneakyThrows
     @PostMapping(value = {"${agile.base-service.query:/list}"})
-    default RETURN list(@AgileInParam I inParam) {
-        validate(inParam, Query.class);
+    default RETURN list(@AgileInParam I inParam) throws Exception {
+        genericService().validate(inParam, Query.class);
         String sql = listSql();
-        List<?> list;
+        List<E> list;
         if (sql != null) {
-            list = service().list(getOutVoClass(), inParam, sql);
+            list = genericService().list(getEntityClass(), inParam, sql);
         } else {
-            list = service().list(getEntityClass(), inParam);
+            list = genericService().list(getEntityClass(), inParam);
         }
 
         List<O> result = toOutVo(list);
@@ -64,16 +62,15 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
      */
     @Validate(value = "pageNum", nullable = false)
     @Validate(value = "pageSize", nullable = false)
-    @SneakyThrows
     @PostMapping(value = {"${agile.base-service.page:/{pageNum}/{pageSize}}"})
-    default RETURN page(@AgileInParam I inParam) {
-        validate(inParam, PageQuery.class);
+    default RETURN page(@AgileInParam I inParam) throws Exception {
+        genericService().validate(inParam, PageQuery.class);
         String sql = listSql();
-        Page<?> page;
+        Page<E> page;
         if (sql != null) {
-            page = service().page(getOutVoClass(), inParam, sql);
+            page = genericService().page(getEntityClass(), inParam, sql);
         } else {
-            page = service().page(getEntityClass(), inParam);
+            page = genericService().page(getEntityClass(), inParam);
         }
         PageImpl<?> result = new PageImpl<>(toOutVo(page.getContent()), page.getPageable(), page.getTotalElements());
         AgileReturn.add(Constant.ResponseAbout.RESULT, result);
@@ -86,23 +83,22 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
      * @param inParam 入参
      * @return 树
      */
-    @SneakyThrows
     @RequestMapping(value = "${agile.base-service.tree:/tree}", method = {RequestMethod.GET, RequestMethod.POST})
-    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree(@AgileInParam I inParam) {
+    default <L extends Serializable, P extends TreeBase<L, P>> RETURN tree(@AgileInParam I inParam) throws Exception {
         if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
         }
-        validate(inParam, Query.class);
+        genericService().validate(inParam, Query.class);
 
-        List<?> list = service().list(getEntityClass(), inParam);
+        List<E> list = genericService().list(getEntityClass(), inParam);
 
         if (!TreeBase.class.isAssignableFrom(getOutVoClass())) {
-            throw new RuntimeException("your out vo class must is TreeBase subclass");
+            throw new IllegalAccessException("your out vo class must is TreeBase subclass");
         }
 
         ArrayList<P> result = new ArrayList<>((Collection<? extends P>) toOutVo(list));
         L rootParentId = (L) getOutVoClass().getMethod("rootParentId").invoke(null);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, service().tree(result, rootParentId));
+        AgileReturn.add(Constant.ResponseAbout.RESULT, genericService().tree(result, rootParentId));
 
         return RETURN.SUCCESS;
     }
@@ -115,14 +111,15 @@ public interface IBaseQueryController<E extends IBaseEntity, I extends BaseInPar
      */
     @Validate(value = "id", nullable = false)
     @GetMapping(value = {"${agile.base-service.queryById:/{id}}"})
-    default RETURN queryById(@AgileInParam("id") String id) throws NoSuchFieldException {
-        Object result;
+    default RETURN queryById(@AgileInParam("id") String id) throws Exception {
+        O result;
         if (detailSql() == null) {
-            result = service().queryById(getEntityClass(), id);
+            E data = genericService().queryById(getEntityClass(), id);
+            result = toSingleOutVo(data);
         } else {
-            result = service().queryOne(getOutVoClass(), getEntityClass(), id, detailSql());
+            result = genericService().queryOne(getOutVoClass(), getEntityClass(), id, detailSql(), "id");
         }
-        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(result));
+        AgileReturn.add(Constant.ResponseAbout.RESULT, result);
         return RETURN.SUCCESS;
     }
 

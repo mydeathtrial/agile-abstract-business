@@ -40,7 +40,7 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
             dataManager().sync().deleteById(id);
             return;
         }
-        deleteById(id, getEntityClass());
+        genericService().deleteById(id, getEntityClass());
     }
 
     /**
@@ -63,7 +63,7 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
             }
             return;
         }
-        deleteByIds(ids, getEntityClass());
+        genericService().deleteByIds(ids, getEntityClass());
     }
 
     /**
@@ -76,7 +76,7 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
         if (dataManager() != null) {
             return RETURN.FAIL;
         }
-        clean(getEntityClass());
+        genericService().clean(getEntityClass());
         return RETURN.SUCCESS;
     }
 }

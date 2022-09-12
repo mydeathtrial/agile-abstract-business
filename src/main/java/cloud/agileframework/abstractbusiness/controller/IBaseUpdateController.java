@@ -4,15 +4,20 @@ import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.constant.Constant;
+import cloud.agileframework.common.util.clazz.TypeReference;
+import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.mvc.annotation.AgileInParam;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileReturn;
+import cloud.agileframework.security.filter.login.CustomerUserDetails;
+import cloud.agileframework.spring.util.SecurityUtil;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.Update;
-import lombok.SneakyThrows;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PutMapping;
 
 import javax.validation.groups.Default;
+import java.util.Date;
 
 /**
  * @author 佟盟
@@ -26,17 +31,26 @@ public interface IBaseUpdateController<E extends IBaseEntity, I extends BaseInPa
      * 更新
      *
      * @param inParam 入参
-     * @param data    实体
      * @return 响应
      */
-    @SneakyThrows
     @Validate(value = "id", nullable = false)
     @PutMapping(value = {"${agile.base-service.update:}"})
-    default RETURN update(@AgileInParam I inParam, @AgileInParam E data) {
-        validate(inParam, Default.class, Update.class);
-        validateEntityExists(data);
-        validateEntity(data, Default.class, Update.class);
-        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(service().updateData(data)));
+    default RETURN update(@AgileInParam I inParam) throws Exception {
+        genericService().validate(inParam, Default.class, Update.class);
+        E data = ObjectUtil.to(inParam, new TypeReference<>(getEntityClass()));
+        genericService().validateEntityExists(data);
+        genericService().validateEntity(data, Default.class, Update.class);
+
+        try {
+            data.setUpdateTime(new Date());
+            UserDetails currentUser = SecurityUtil.currentUser();
+            if (currentUser instanceof CustomerUserDetails) {
+                data.setUpdateUser(((CustomerUserDetails) currentUser).id());
+            }
+        } catch (Exception ignored) {
+        }
+
+        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(genericService().updateData(data)));
         return RETURN.SUCCESS;
     }
 }

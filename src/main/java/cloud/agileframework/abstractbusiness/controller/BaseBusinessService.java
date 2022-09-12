@@ -1,6 +1,6 @@
 package cloud.agileframework.abstractbusiness.controller;
 
-import cloud.agileframework.abstractbusiness.conf.BusinessAutoConfiguration;
+import cloud.agileframework.abstractbusiness.service.GenericService;
 import cloud.agileframework.common.annotation.Remark;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.object.ObjectUtil;
@@ -44,7 +44,7 @@ public class BaseBusinessService {
     public static final String MODEL = "model";
 
     @Autowired
-    private BusinessAutoConfiguration.BaseServiceOfController baseService;
+    private GenericService genericService;
 
     public static List<ValidateMsg> toValidateMessages(Object data, Class<?>... groups) {
         if (data instanceof Class) {

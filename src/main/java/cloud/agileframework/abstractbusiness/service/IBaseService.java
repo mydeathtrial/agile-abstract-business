@@ -1,7 +1,5 @@
 package cloud.agileframework.abstractbusiness.service;
 
-import cloud.agileframework.abstractbusiness.controller.BaseBusinessService;
-import cloud.agileframework.abstractbusiness.pojo.EntityExistsException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
@@ -12,12 +10,7 @@ import cloud.agileframework.data.common.dao.BaseDao;
 import cloud.agileframework.dictionary.AbstractDictionaryDataManager;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.dictionary.util.DictionaryUtil;
-import cloud.agileframework.jpa.dao.Dao;
-import cloud.agileframework.mvc.annotation.NotAPI;
-import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.spring.util.BeanUtil;
-import cloud.agileframework.validate.ValidateMsg;
-import cloud.agileframework.validate.ValidateUtil;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.core.ResolvableType;
 
@@ -33,74 +26,14 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends BaseService {
+public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> {
 
-    @NotAPI
     default BaseDao dao() {
-        return BeanUtil.getBean(Dao.class);
+        return genericService().dao();
     }
 
-    /**
-     * 参数验证
-     *
-     * @param pojo   实体
-     * @param groups 场景
-     * @throws AgileArgumentException 验证失败
-     */
-    @NotAPI
-    default void validate(Object pojo, Class<?>... groups) throws AgileArgumentException {
-        List<ValidateMsg> list = ValidateUtil.validate(pojo, groups);
-        if (!list.isEmpty()) {
-            throw new AgileArgumentException(list);
-        }
-    }
-
-    /**
-     * 验证实体
-     *
-     * @param pojo   数据库数据
-     * @param groups 场景
-     * @throws AgileArgumentException 验证失败
-     */
-    @NotAPI
-    default void validateEntity(Object pojo, Class<?>... groups) throws AgileArgumentException {
-        List<ValidateMsg> list = BaseBusinessService.toValidateMessages(pojo, groups);
-        if (!list.isEmpty()) {
-            throw new AgileArgumentException(list);
-        }
-    }
-
-    /**
-     * 验证实体
-     *
-     * @param pojo 数据库数据
-     * @throws EntityExistsException 数据不存在异常
-     */
-    @NotAPI
-    default <A> void validateEntityExists(A pojo) throws EntityExistsException, AgileArgumentException {
-
-        Dao dao = BeanUtil.getBean(Dao.class);
-        Object id = null;
-        if (pojo != null) {
-            id = dao.getId(pojo);
-        }
-        if (pojo == null || id == null) {
-            throw new AgileArgumentException(new ValidateMsg("主键不允许为空", dao.getIdField(getEntityClass()).getName(), null));
-        }
-        List<A> old = dao.findAllByArrayId((Class<A>) pojo.getClass(), id);
-        if (old == null || old.isEmpty()) {
-            throw new EntityExistsException(id + "");
-        }
-    }
-
-    /**
-     * 取基础服务
-     *
-     * @return 通用基础服务
-     */
-    @NotAPI
-    default BaseService service() {
-        return BeanUtil.getBean(BaseService.class);
+    default GenericService genericService() {
+        return BeanUtil.getBean(GenericService.class);
     }
 
     /**
@@ -108,7 +41,6 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      *
      * @return 实体类
      */
-    @NotAPI
     default Class<E> getEntityClass() {
         Type entityClass = ClassUtil.getGeneric(this.getClass(), IBaseService.class, 0);
         if (entityClass instanceof Class) {
@@ -122,7 +54,6 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      *
      * @return 出参vo类型
      */
-    @NotAPI
     default Class<O> getOutVoClass() {
         Type outVo = ClassUtil.getGeneric(this.getClass(), IBaseService.class, 2);
         if (outVo instanceof Class) {
@@ -136,7 +67,6 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      *
      * @return 出参vo类型
      */
-    @NotAPI
     default Class<I> getInVoClass() {
         Type inVo = ClassUtil.getGeneric(this.getClass(), IBaseService.class, 1);
         if (inVo instanceof Class) {
@@ -152,8 +82,7 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      * @param list 响应数据集合
      * @return OutVo类型响应数据
      */
-    @NotAPI
-    default List<O> toOutVo(List<?> list) {
+    default List<O> toOutVo(List<E> list) {
         return list.stream().map(this::toSingleOutVo).collect(Collectors.toList());
     }
 
@@ -163,8 +92,7 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      * @param n 单个对象
      * @return 返回值
      */
-    @NotAPI
-    default O toSingleOutVo(Object n) {
+    default O toSingleOutVo(E n) {
         if (n == null) {
             return null;
         }

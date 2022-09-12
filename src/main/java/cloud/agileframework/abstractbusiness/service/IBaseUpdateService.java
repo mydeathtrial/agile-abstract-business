@@ -3,19 +3,16 @@ package cloud.agileframework.abstractbusiness.service;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
-import cloud.agileframework.mvc.param.AgileReturn;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.SecurityUtil;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.Update;
-import lombok.SneakyThrows;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -35,19 +32,19 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
      *
      * @return 响应
      */
-    @SneakyThrows
     @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.update:}"}, method = RequestMethod.PUT)
     default RETURN update() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        return update(inParam);
+        update(inParam);
+        return RETURN.SUCCESS;
     }
 
-    default RETURN update(I inParam) throws Exception {
+    default void update(I inParam) throws Exception {
         E data = ObjectUtil.to(inParam, new TypeReference<>(getEntityClass()));
-        validate(inParam, Default.class, Update.class);
-        validateEntityExists(data);
-        validateEntity(data, Default.class, Update.class);
+        genericService().validate(inParam, Default.class, Update.class);
+        genericService().validateEntityExists(data);
+        genericService().validateEntity(data, Default.class, Update.class);
 
         try {
             data.setUpdateTime(new Date());
@@ -60,9 +57,8 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
 
         if (dataManager() != null) {
             dataManager().sync().updateOfNotNull((DictionaryDataBase) data);
-            return RETURN.SUCCESS;
+        } else {
+            genericService().updateData(data);
         }
-        AgileReturn.add(Constant.ResponseAbout.RESULT, toSingleOutVo(updateData(data)));
-        return RETURN.SUCCESS;
     }
 }
