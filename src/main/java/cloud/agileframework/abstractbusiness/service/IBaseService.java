@@ -9,13 +9,16 @@ import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.data.common.dao.BaseDao;
 import cloud.agileframework.dictionary.AbstractDictionaryDataManager;
 import cloud.agileframework.dictionary.DictionaryDataBase;
+import cloud.agileframework.dictionary.util.ConvertDicAnnotation;
 import cloud.agileframework.dictionary.util.DictionaryUtil;
+import cloud.agileframework.dictionary.util.TranslateException;
 import cloud.agileframework.spring.util.BeanUtil;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,7 +86,12 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
      * @return OutVo类型响应数据
      */
     default List<O> toOutVo(List<E> list) {
-        return list.stream().map(this::toSingleOutVo).collect(Collectors.toList());
+        List<O> result = new ArrayList<>();
+        for (E e : list) {
+            O o = toSingleOutVo(e);
+            result.add(o);
+        }
+        return result;
     }
 
     /**
@@ -101,7 +109,7 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
         if (o == null) {
             return ClassUtil.newInstance(getOutVoClass());
         }
-        DictionaryUtil.cover(o);
+        ConvertDicAnnotation.cover(o);
         return o;
     }
 

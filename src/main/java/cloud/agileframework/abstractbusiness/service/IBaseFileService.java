@@ -335,6 +335,9 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 });
             } else if (getType(target) == Date.class && !StringUtils.isBlank(target.getAnnotation().format())) {
                 builder.serialize(a -> {
+                    if(a == null){
+                        return null;
+                    }
                     try {
                         SimpleDateFormat simple = new SimpleDateFormat(target.getAnnotation().format());
                         return simple.format((Date) a);

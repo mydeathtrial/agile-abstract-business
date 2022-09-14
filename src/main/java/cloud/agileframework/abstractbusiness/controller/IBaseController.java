@@ -7,9 +7,11 @@ import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.util.ConvertDicAnnotation;
+import cloud.agileframework.dictionary.util.TranslateException;
 import cloud.agileframework.spring.util.BeanUtil;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,7 +67,12 @@ public interface IBaseController<E extends IBaseEntity, O extends IBaseOutParamV
      * @return OutVo类型响应数据
      */
     default List<O> toOutVo(List<E> list) {
-        return list.stream().map(this::toSingleOutVo).collect(Collectors.toList());
+        List<O> result = new ArrayList<>();
+        for (E e : list) {
+            O o = toSingleOutVo(e);
+            result.add(o);
+        }
+        return result;
     }
 
     /**

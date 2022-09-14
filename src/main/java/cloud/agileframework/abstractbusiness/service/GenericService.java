@@ -4,11 +4,13 @@ import cloud.agileframework.abstractbusiness.controller.BaseBusinessService;
 import cloud.agileframework.abstractbusiness.pojo.EntityExistsException;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
+import cloud.agileframework.common.DataException;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.common.util.collection.TreeUtil;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.data.common.dao.BaseDao;
+import cloud.agileframework.dictionary.util.TranslateException;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.spring.util.BeanUtil;
@@ -51,12 +53,12 @@ public class GenericService {
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public <E extends IBaseEntity> void saveDataWithNewTransaction(List<E> data) throws NoSuchFieldException, IllegalAccessException {
+    public <E extends IBaseEntity> void saveDataWithNewTransaction(List<E> data) throws NoSuchFieldException, IllegalAccessException, DataException {
         saveData(data);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public <E extends IBaseEntity> void saveData(List<E> data) throws NoSuchFieldException, IllegalAccessException {
+    public <E extends IBaseEntity> void saveData(List<E> data) {
         for (E node : data) {
             Object v = dao().getId(node);
             if (StringUtils.isBlank(String.valueOf(v))) {
@@ -72,7 +74,7 @@ public class GenericService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public <E extends IBaseEntity> E saveData(E data) throws NoSuchFieldException, IllegalAccessException {
+    public <E extends IBaseEntity> E saveData(E data) {
         Object v = dao().getId(data);
         if (StringUtils.isBlank(String.valueOf(v))) {
             dao().setId(data, null);
@@ -92,12 +94,12 @@ public class GenericService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public <E extends IBaseEntity> void deleteByIds(List<String> id, Class<E> javaType) throws NoSuchFieldException {
+    public <E extends IBaseEntity> void deleteByIds(List<String> id, Class<E> javaType) {
         dao().deleteInBatch(javaType, id);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public <E extends IBaseEntity> E updateData(E data) throws NoSuchFieldException, IllegalAccessException {
+    public <E extends IBaseEntity> E updateData(E data) {
         //赋予创建用户
         if (data != null && data.getUpdateUser() == null) {
             data.setUpdateUser(security().currentUser());
@@ -198,7 +200,7 @@ public class GenericService {
      * @param pojo 数据库数据
      * @throws EntityExistsException 数据不存在异常
      */
-    public <E extends IBaseEntity> void validateEntityExists(E pojo) throws EntityExistsException {
+    public <E extends IBaseEntity> void validateEntityExists(E pojo) throws EntityExistsException, TranslateException {
 
         Dao dao = BeanUtil.getBean(Dao.class);
         Object id = null;
