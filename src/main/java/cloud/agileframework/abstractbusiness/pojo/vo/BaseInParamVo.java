@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  */
 @Data
 @ToString
-public class BaseInParamVo implements Serializable {
+public class BaseInParamVo implements IBaseInParamVo {
     /**
      * 排序字段
      * 表名称

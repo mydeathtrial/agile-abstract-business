@@ -1,6 +1,6 @@
 package cloud.agileframework.abstractbusiness.pojo.vo;
 
-import java.io.Serializable;
+import cloud.agileframework.abstractbusiness.pojo.IBasePojo;
 
 /**
  * @author 佟盟
@@ -9,5 +9,5 @@ import java.io.Serializable;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseOutParamVo extends Serializable {
+public interface IBaseOutParamVo extends IBasePojo {
 }

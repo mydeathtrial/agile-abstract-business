@@ -2,12 +2,14 @@ package cloud.agileframework.abstractbusiness.service;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
+import cloud.agileframework.abstractbusiness.pojo.vo.IBaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.SecurityUtil;
@@ -34,14 +36,17 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
     @Mapping(value = {"${agile.base-service.save:}"}, method = RequestMethod.POST)
     default RETURN save() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
+        if(inParam==null){
+            throw new AgileArgumentException("入参中没提取到有效数据");
+        }
         save(inParam);
         return RETURN.SUCCESS;
     }
 
     default void save(I inParam) throws Exception {
-        E data = ObjectUtil.to(inParam, new TypeReference<>(getEntityClass()));
-        genericService().validate(inParam, Default.class, Insert.class);
-        genericService().validateEntity(data, Default.class, Insert.class);
+        inParam.validate(Default.class, Insert.class);
+        E data = inParam.to(getEntityClass());
+        data.validate(Default.class, Insert.class);
 
         try {
             data.setCreateTime(new Date());

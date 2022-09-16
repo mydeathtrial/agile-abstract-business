@@ -1,5 +1,7 @@
 package cloud.agileframework.abstractbusiness.pojo.entity;
 
+import cloud.agileframework.abstractbusiness.pojo.IBasePojo;
+
 import java.util.Date;
 
 /**
@@ -9,7 +11,7 @@ import java.util.Date;
  * @version 1.0
  * @since 1.0
  */
-public interface IBaseEntity {
+public interface IBaseEntity extends IBasePojo {
 
     /**
      * 取创建人主键

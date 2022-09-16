@@ -14,9 +14,11 @@ import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.exception.NoSuchRequestServiceException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.mvc.param.AgileReturn;
+import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.PageQuery;
 import cloud.agileframework.validate.group.Query;
+import com.google.common.collect.Lists;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -49,7 +51,9 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     }
 
     default List<O> list(I inParam) throws Exception {
-        genericService().validate(inParam, Query.class);
+        if (inParam != null) {
+            inParam.validate(Query.class);
+        }
         String sql = parseOrder(inParam, listSql());
         List<E> list;
         if (sql != null) {
@@ -79,7 +83,11 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
     }
 
     default PageImpl<O> page(I inParam) throws Exception {
-        genericService().validate(inParam, PageQuery.class);
+        if (inParam == null) throw new AgileArgumentException(
+                Lists.newArrayList(
+                        ValidateMsg.builder().item("pageNum").message("必填").build(),
+                        ValidateMsg.builder().item("pageSize").message("必填").build()));
+        inParam.validate(PageQuery.class);
         String sql = parseOrder(inParam, listSql());
         Page<E> page;
         if (sql != null) {
@@ -111,7 +119,9 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
         if (!TreeBase.class.isAssignableFrom(getEntityClass())) {
             throw new NoSuchRequestServiceException();
         }
-        genericService().validate(inParam, Query.class);
+        if(inParam!=null){
+            inParam.validate(Query.class);
+        }
 
         List<E> list = genericService().list(getEntityClass(), inParam);
 

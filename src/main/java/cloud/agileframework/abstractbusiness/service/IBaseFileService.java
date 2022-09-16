@@ -5,6 +5,7 @@ import cloud.agileframework.abstractbusiness.annotation.ExcelDeserialize;
 import cloud.agileframework.abstractbusiness.annotation.ExcelSerialize;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
+import cloud.agileframework.abstractbusiness.pojo.vo.IBaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
@@ -248,7 +249,9 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     @Mapping(value = {"${agile.base-service.download:/download}", "/export"}, method = {RequestMethod.POST, RequestMethod.GET})
     default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        genericService().validate(inParam, Query.class);
+        if(inParam!=null){
+            inParam.validate(Query.class);
+        }
         String sql = parseOrder(inParam, listSql());
         List<E> list;
         if (sql != null) {

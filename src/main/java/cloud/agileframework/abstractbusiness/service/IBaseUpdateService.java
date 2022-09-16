@@ -3,11 +3,10 @@ package cloud.agileframework.abstractbusiness.service;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.common.util.clazz.TypeReference;
-import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
+import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
 import cloud.agileframework.spring.util.SecurityUtil;
@@ -36,16 +35,19 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
     @Mapping(value = {"${agile.base-service.update:}"}, method = RequestMethod.PUT)
     default RETURN update() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
+        if(inParam==null){
+            throw new AgileArgumentException("入参中没提取到有效数据");
+        }
         update(inParam);
         return RETURN.SUCCESS;
     }
 
     default void update(I inParam) throws Exception {
-        E data = ObjectUtil.to(inParam, new TypeReference<>(getEntityClass()));
-        genericService().validate(inParam, Default.class, Update.class);
+        inParam.validate(Default.class, Update.class);
+        E data = inParam.to(getEntityClass());
+        data.validate(Default.class, Update.class);
         genericService().validateEntityExists(data);
-        genericService().validateEntity(data, Default.class, Update.class);
-
+        
         try {
             data.setUpdateTime(new Date());
             UserDetails currentUser = SecurityUtil.currentUser();

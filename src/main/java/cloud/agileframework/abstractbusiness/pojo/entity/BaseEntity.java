@@ -24,7 +24,7 @@ import java.util.Date;
 @MappedSuperclass
 @Setter
 @SuperBuilder
-public class BaseEntity implements IBaseEntity, Serializable {
+public class BaseEntity implements IBaseEntity {
     private Long createUser;
     private Date createTime;
     private Long updateUser;
