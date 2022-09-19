@@ -10,6 +10,7 @@ import cloud.agileframework.common.util.collection.TreeBase;
 import cloud.agileframework.common.util.collection.TreeUtil;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.data.common.dao.BaseDao;
+import cloud.agileframework.dictionary.util.ConvertDicAnnotation;
 import cloud.agileframework.dictionary.util.TranslateException;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
@@ -19,11 +20,13 @@ import cloud.agileframework.validate.ValidateUtil;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.SortedSet;
@@ -42,6 +45,27 @@ public class GenericService {
     public GenericService(BaseDao dao, ISecurityService security) {
         this.dao = dao;
         this.security = security;
+    }
+
+    public static <A,B>List<B> toList(List<A> data, Class<B> type){
+        List<B> result = new ArrayList<>();
+        for (A e : data) {
+            result.add(to(e,type));
+        }
+        return result;
+    }
+
+    public static <A,B>B to(A data, Class<B> type){
+        if(data==null){
+            return null;
+        }
+        final TypeReference<B> typeReference = new TypeReference<>(type);
+        B o = ObjectUtil.to(data, typeReference);
+        if (o == null) {
+            throw new DataException("数据类型转换失败"+data.getClass()+"无法与"+type+"类型之间完成互转");
+        }
+        ConvertDicAnnotation.cover(o);
+        return o;
     }
 
     public BaseDao dao() {
@@ -121,6 +145,26 @@ public class GenericService {
         }
         return dao().findBySQL(sql, outVoClass, inParam);
     }
+    public <I extends BaseInParamVo,J,T> List<T> list(Class<J> queryBy, Class<T> outBy, I inParam){
+        J data = ObjectUtil.to(inParam, new TypeReference<>(queryBy));
+        List<J> list;
+        if (data == null) {
+            list = dao().findAllByClass(queryBy, inParam.sort());
+        }else {
+            list = dao().findAll(data, inParam.sort());
+        }
+        
+        return toList(list,outBy);
+    }
+    public <I extends BaseInParamVo,J,T> List<T> list(Class<J> queryBy,Class<T> outBy,I inParam,String sql){
+        List<J> list;
+        if (inParam == null) {
+            list = dao().findBySQL(sql, queryBy, Maps.newHashMap());
+        }else{
+            list = dao().findBySQL(sql, queryBy, inParam);
+        }
+        return toList(list,outBy);
+    } 
 
     public <E extends IBaseEntity> E queryById(Class<E> data, Object id) {
         return dao().findOne(data, id);
@@ -133,12 +177,27 @@ public class GenericService {
         return ObjectUtil.to(data, new TypeReference<>(outVoClass));
     }
 
+    public <T> T queryOne(Class<T> outClass, String id, String sql, String idPlaceholder) {
+        HashMap<Object, Object> params = Maps.newHashMap();
+        params.put(idPlaceholder, id);
+        return dao().findOne(sql, outClass, params);
+    }
+
     public <I extends BaseInParamVo, V> Page<V> page(Class<V> outVoClass, I inParam, String sql) {
         PageRequest pageRequest = PageRequest.of(
                 inParam.getPageNum() - 1,
                 inParam.getPageSize());
 
         return dao().pageBySQL(inParam.parseOrder(sql), pageRequest, outVoClass, inParam);
+    }
+
+    public <I extends BaseInParamVo,J,T> Page<T> page(Class<J> queryBy,Class<T> outBy, I inParam, String sql){
+        PageRequest pageRequest = PageRequest.of(
+                inParam.getPageNum() - 1,
+                inParam.getPageSize());
+
+        Page<J> page = dao().pageBySQL(inParam.parseOrder(sql), pageRequest, queryBy, inParam);
+        return new PageImpl<>(toList(page.getContent(),outBy), page.getPageable(), page.getTotalElements());
     }
 
     public <I extends BaseInParamVo, E extends IBaseEntity> Page<E> page(Class<E> entityClass, I inParam) {
@@ -153,6 +212,23 @@ public class GenericService {
             return dao().pageByClass(entityClass, pageRequest);
         }
         return dao().page(data, pageRequest);
+    }
+
+    public  <I extends BaseInParamVo,J,T> Page<T>  page(Class<J> queryBy,Class<T> outBy, I inParam){
+        J data = ObjectUtil.to(inParam, new TypeReference<>(queryBy));
+
+        PageRequest pageRequest = PageRequest.of(
+                inParam.getPageNum() - 1,
+                inParam.getPageSize(),
+                inParam.sort());
+
+        Page<J> page;
+        if (data == null) {
+            page = dao().pageByClass(queryBy, pageRequest);
+        }else{
+            page = dao().page(data, pageRequest);
+        }
+        return new PageImpl<>(toList(page.getContent(),outBy), page.getPageable(), page.getTotalElements());
     }
 
     @Transactional(rollbackFor = Exception.class)

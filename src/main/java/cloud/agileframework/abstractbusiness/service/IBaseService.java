@@ -5,22 +5,15 @@ import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
-import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.data.common.dao.BaseDao;
 import cloud.agileframework.dictionary.AbstractDictionaryDataManager;
 import cloud.agileframework.dictionary.DictionaryDataBase;
-import cloud.agileframework.dictionary.util.ConvertDicAnnotation;
-import cloud.agileframework.dictionary.util.DictionaryUtil;
-import cloud.agileframework.dictionary.util.TranslateException;
 import cloud.agileframework.spring.util.BeanUtil;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author 佟盟
@@ -76,41 +69,6 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
             return (Class<I>) inVo;
         }
         throw new ClassCastException("当前类作为参数化类型“I”，没找到对应的实体类型");
-    }
-
-
-    /**
-     * 集合转换成OutVo
-     *
-     * @param list 响应数据集合
-     * @return OutVo类型响应数据
-     */
-    default List<O> toOutVo(List<E> list) {
-        List<O> result = new ArrayList<>();
-        for (E e : list) {
-            O o = toSingleOutVo(e);
-            result.add(o);
-        }
-        return result;
-    }
-
-    /**
-     * 单个对象转换成OutVo类型
-     *
-     * @param n 单个对象
-     * @return 返回值
-     */
-    default O toSingleOutVo(E n) {
-        if (n == null) {
-            return null;
-        }
-        final TypeReference<O> typeReference = new TypeReference<>(getOutVoClass());
-        O o = ObjectUtil.to(n, typeReference);
-        if (o == null) {
-            return ClassUtil.newInstance(getOutVoClass());
-        }
-        ConvertDicAnnotation.cover(o);
-        return o;
     }
 
     default AbstractDictionaryDataManager<DictionaryDataBase> dataManager() {

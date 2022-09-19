@@ -5,7 +5,6 @@ import cloud.agileframework.abstractbusiness.annotation.ExcelDeserialize;
 import cloud.agileframework.abstractbusiness.annotation.ExcelSerialize;
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
-import cloud.agileframework.abstractbusiness.pojo.vo.IBaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
@@ -260,7 +259,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             list = genericService().list(getEntityClass(), inParam);
         }
 
-        List<O> result = toOutVo(list);
+        List<O> result = GenericService.toList(list,getOutVoClass());
 
         Set<ClassUtil.Target<Excel>> remarks = ClassUtil.getAllFieldAnnotation(getOutVoClass(), Excel.class);
         List<CellInfo> cellInfos = remarks.stream()
