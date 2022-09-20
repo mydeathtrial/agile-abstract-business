@@ -125,7 +125,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
         return RETURN.SUCCESS;
     }
 
-    default SortedSet<O> tree(I inParam) throws Exception {
+    default SortedSet<?> tree(I inParam) throws Exception {
         return tree(inParam, getEntityClass(), getOutVoClass());
     }
 
