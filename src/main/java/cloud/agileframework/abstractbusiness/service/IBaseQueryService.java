@@ -140,7 +140,7 @@ public interface IBaseQueryService<E extends IBaseEntity, I extends BaseInParamV
         List<T> list = genericService().list(queryBy, outBy, inParam);
 
         if (!TreeBase.class.isAssignableFrom(outBy)) {
-            throw new AgileArgumentException("如果是树形结构查询，OutVo必须继承于TreeBase");
+            throw new AgileArgumentException("如果是树形结构查询，outBy必须继承于TreeBase");
         }
         if (getOutVoClass().isAssignableFrom(outBy)) {
             for (T t : list) {

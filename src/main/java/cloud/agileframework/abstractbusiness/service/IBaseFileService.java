@@ -248,25 +248,31 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     @Mapping(value = {"${agile.base-service.download:/download}", "/export"}, method = {RequestMethod.POST, RequestMethod.GET})
     default ExcelFile download() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        if(inParam!=null){
+        if (inParam != null) {
             inParam.validate(Query.class);
         }
-        String sql = parseOrder(inParam, listSql());
-        List<E> list;
-        if (sql != null) {
-            list = genericService().list(getEntityClass(), inParam, sql);
-        } else {
-            list = genericService().list(getEntityClass(), inParam);
-        }
+        return download(inParam);
+    }
 
-        List<O> result = GenericService.toList(list,getOutVoClass());
+    default ExcelFile download(I inParam) {
+        return download(inParam, getEntityClass(), getOutVoClass());
+    }
+
+    default <J, T> ExcelFile download(I inParam, Class<J> queryBy, Class<T> outBy) {
+        String sql = parseOrder(inParam, listSql());
+        List<T> list;
+        if (sql != null) {
+            list = genericService().list(queryBy, outBy, inParam, sql);
+        } else {
+            list = genericService().list(queryBy, outBy, inParam);
+        }
 
         Set<ClassUtil.Target<Excel>> remarks = ClassUtil.getAllFieldAnnotation(getOutVoClass(), Excel.class);
         List<CellInfo> cellInfos = remarks.stream()
                 .map(IBaseFileService::getCellInfo)
                 .collect(Collectors.toList());
 
-        Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).setData((JSONArray) JSON.toJSON(result)).build());
+        Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).setData((JSONArray) JSON.toJSON(list)).build());
 
         return new ExcelFile(fileName(), workbook);
     }
@@ -337,7 +343,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 });
             } else if (getType(target) == Date.class && !StringUtils.isBlank(target.getAnnotation().format())) {
                 builder.serialize(a -> {
-                    if(a == null){
+                    if (a == null) {
                         return null;
                     }
                     try {
