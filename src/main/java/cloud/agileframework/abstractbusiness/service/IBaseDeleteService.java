@@ -2,12 +2,12 @@ package cloud.agileframework.abstractbusiness.service;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
-import cloud.agileframework.abstractbusiness.pojo.vo.IBaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.param.AgileParam;
+import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.validate.annotation.Validate;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -32,7 +32,8 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
     @Validate(value = ID, nullable = false)
     @Mapping(value = {"${agile.base-service.deleteById:/{id}}"}, method = RequestMethod.DELETE)
     default RETURN deleteById() throws Exception {
-        delete(AgileParam.getInParam(ID, String.class));
+        IBaseDeleteService<E, I, O> service = (IBaseDeleteService<E, I, O>)BeanUtil.getApplicationContext().getBean(getClass());
+        service.delete(AgileParam.getInParam(ID, String.class));
         return RETURN.SUCCESS;
     }
 
@@ -52,15 +53,18 @@ public interface IBaseDeleteService<E extends IBaseEntity, I extends BaseInParam
     @Validate(nullable = false)
     @Mapping(value = {"${agile.base-service.deleteByIds:}"}, method = RequestMethod.DELETE)
     default RETURN deleteByIds() throws Exception {
-        delete(AgileParam.getInParam(ID, new TypeReference<List<String>>() {
+        IBaseDeleteService<E, I, O> service = (IBaseDeleteService<E, I, O>)BeanUtil.getApplicationContext().getBean(getClass());
+        service.delete(AgileParam.getInParam(ID, new TypeReference<List<String>>() {
         }));
         return RETURN.SUCCESS;
     }
 
     default void delete(List<String> ids) throws Exception {
+        IBaseDeleteService<E, I, O> service = (IBaseDeleteService<E, I, O>)BeanUtil.getApplicationContext().getBean(getClass());
+        
         if (dataManager() != null) {
             for (String id : ids) {
-                delete(id);
+                service.delete(id);
             }
             return;
         }

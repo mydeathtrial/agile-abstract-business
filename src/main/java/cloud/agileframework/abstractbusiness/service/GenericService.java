@@ -18,6 +18,7 @@ import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.validate.ValidateMsg;
 import cloud.agileframework.validate.ValidateUtil;
 import com.google.common.collect.Maps;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.data.domain.Page;
@@ -84,12 +85,13 @@ public class GenericService {
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public <E extends IBaseEntity> void saveDataWithNewTransaction(List<E> data) throws NoSuchFieldException, IllegalAccessException, DataException {
-        saveData(data);
+    public <E extends IBaseEntity> List<E> saveDataWithNewTransaction(List<E> data) throws DataException {
+        return saveData(data);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public <E extends IBaseEntity> void saveData(List<E> data) {
+    public <E extends IBaseEntity> List<E> saveData(List<E> data) {
+        List<E> result = Lists.newArrayList();
         for (E node : data) {
             Object v = dao().getId(node);
             if (StringUtils.isBlank(String.valueOf(v))) {
@@ -99,9 +101,9 @@ public class GenericService {
                 //赋予创建用户
                 node.setCreateUser(security().currentUser());
             }
+            result.add(dao().saveAndReturn(node));
         }
-
-        dao().save(data);
+        return result;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -115,7 +117,7 @@ public class GenericService {
             data.setCreateUser(security().currentUser());
         }
 
-        return dao().saveAndReturn(data);
+        return dao().saveOrUpdate(data);
 
     }
 

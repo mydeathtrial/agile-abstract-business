@@ -129,7 +129,8 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         }
 
         if (error.isEmpty()) {
-            handleSuccessData(success.stream().map(a -> a.in).collect(Collectors.toList()));
+            IBaseFileService<E, I, O> service = (IBaseFileService<E, I, O>)BeanUtil.getApplicationContext().getBean(getClass());
+            service.handleSuccessData(success.stream().map(a -> a.in).collect(Collectors.toList()));
             return RETURN.SUCCESS;
         } else if (exportAllIfError) {
             handleErrorData(allData);
@@ -161,7 +162,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
      * @param data 数据
      * @throws Exception 异常
      */
-    default void handleSuccessData(List<I> data) throws Exception {
+    default List<E> handleSuccessData(List<I> data) throws Exception {
         final TypeReference<List<E>> toClass = new TypeReference<List<E>>() {
         };
         ParameterizedType parameterizedType = (ParameterizedType) toClass.getType();
@@ -170,7 +171,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 getEntityClass());
         toClass.replace(parameterizedType);
 
-        genericService().saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
+        return genericService().saveDataWithNewTransaction(ObjectUtil.to(data, toClass));
     }
 
     default void handleErrorData(List<ProxyData<I>> proxyData) throws Exception {

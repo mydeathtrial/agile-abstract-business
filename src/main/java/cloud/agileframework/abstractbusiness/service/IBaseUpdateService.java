@@ -9,6 +9,7 @@ import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
+import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.spring.util.SecurityUtil;
 import cloud.agileframework.validate.annotation.Validate;
 import cloud.agileframework.validate.group.Update;
@@ -38,16 +39,31 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
         if(inParam==null){
             throw new AgileArgumentException("入参中没提取到有效数据");
         }
-        update(inParam);
+        IBaseUpdateService<E, I, O> service = (IBaseUpdateService<E, I, O>)BeanUtil.getApplicationContext().getBean(getClass());
+        service.update(inParam);
+        inParam.validate(Default.class, Update.class);
         return RETURN.SUCCESS;
     }
 
-    default void update(I inParam) throws Exception {
-        inParam.validate(Default.class, Update.class);
+    /**
+     * 更新数据
+     * @param inParam 入参
+     * @throws Exception 异常
+     */
+    default E update(I inParam) throws Exception {
         E data = inParam.to(getEntityClass());
         data.validate(Default.class, Update.class);
         genericService().validateEntityExists(data);
-        
+        IBaseUpdateService<E, I, O> service = (IBaseUpdateService<E, I, O>)BeanUtil.getApplicationContext().getBean(getClass());
+        return service.updateDo(data);
+    }
+
+    /**
+     * 更新数据
+     * @param data 数据
+     * @throws Exception 异常
+     */
+    default E updateDo(E data) throws Exception {
         try {
             data.setUpdateTime(new Date());
             UserDetails currentUser = SecurityUtil.currentUser();
@@ -58,9 +74,9 @@ public interface IBaseUpdateService<E extends IBaseEntity, I extends BaseInParam
         }
 
         if (dataManager() != null) {
-            dataManager().sync().updateOfNotNull((DictionaryDataBase) data);
+            return (E) dataManager().sync().updateOfNotNull((DictionaryDataBase) data);
         } else {
-            genericService().updateData(data);
+            return genericService().updateData(data);
         }
     }
 }

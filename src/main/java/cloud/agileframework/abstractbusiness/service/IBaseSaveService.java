@@ -2,16 +2,14 @@ package cloud.agileframework.abstractbusiness.service;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
-import cloud.agileframework.abstractbusiness.pojo.vo.IBaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
-import cloud.agileframework.common.util.clazz.TypeReference;
-import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.mvc.annotation.Mapping;
 import cloud.agileframework.mvc.base.RETURN;
 import cloud.agileframework.mvc.exception.AgileArgumentException;
 import cloud.agileframework.mvc.param.AgileParam;
 import cloud.agileframework.security.filter.login.CustomerUserDetails;
+import cloud.agileframework.spring.util.BeanUtil;
 import cloud.agileframework.spring.util.SecurityUtil;
 import cloud.agileframework.validate.group.Insert;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,18 +34,35 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
     @Mapping(value = {"${agile.base-service.save:}"}, method = RequestMethod.POST)
     default RETURN save() throws Exception {
         I inParam = AgileParam.getInParam(getInVoClass());
-        if(inParam==null){
+        if (inParam == null) {
             throw new AgileArgumentException("入参中没提取到有效数据");
         }
-        save(inParam);
+        IBaseSaveService<E, I, O> service = (IBaseSaveService<E, I, O>) BeanUtil.getApplicationContext().getBean(getClass());
+        service.save(inParam);
+        inParam.validate(Default.class, Insert.class);
         return RETURN.SUCCESS;
     }
 
-    default void save(I inParam) throws Exception {
-        inParam.validate(Default.class, Insert.class);
+    /**
+     * 保存
+     *
+     * @param inParam 入参
+     * @throws Exception 异常
+     */
+    default E save(I inParam) throws Exception {
         E data = inParam.to(getEntityClass());
         data.validate(Default.class, Insert.class);
+        IBaseSaveService<E, I, O> service = (IBaseSaveService<E, I, O>) BeanUtil.getApplicationContext().getBean(getClass());
+        return service.saveDo(data);
+    }
 
+    /**
+     * 保存
+     *
+     * @param data 数据
+     * @throws Exception 异常
+     */
+    default E saveDo(E data) throws Exception {
         try {
             data.setCreateTime(new Date());
             UserDetails currentUser = SecurityUtil.currentUser();
@@ -58,9 +73,9 @@ public interface IBaseSaveService<E extends IBaseEntity, I extends BaseInParamVo
         }
 
         if (dataManager() != null) {
-            dataManager().sync().add((DictionaryDataBase) data);
+            return (E) dataManager().sync().add((DictionaryDataBase) data);
         } else {
-            genericService().saveData(data);
+            return genericService().saveData(data);
         }
     }
 }

@@ -2,7 +2,6 @@ package cloud.agileframework.abstractbusiness.service;
 
 import cloud.agileframework.abstractbusiness.pojo.entity.IBaseEntity;
 import cloud.agileframework.abstractbusiness.pojo.vo.BaseInParamVo;
-import cloud.agileframework.abstractbusiness.pojo.vo.IBaseInParamVo;
 import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
 
 /**
@@ -13,8 +12,6 @@ import cloud.agileframework.abstractbusiness.pojo.vo.IBaseOutParamVo;
  * @since 1.0
  */
 public interface AllBusinessService<E extends IBaseEntity, I extends BaseInParamVo, O extends IBaseOutParamVo> extends
-        IBaseSaveService<E, I, O>,
-        IBaseDeleteService<E, I, O>,
-        IBaseUpdateService<E, I, O>,
+        WriteService<E, I, O>,
         IBaseFileService<E, I, O> {
 }
