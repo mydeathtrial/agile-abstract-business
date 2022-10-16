@@ -1,26 +1,36 @@
 package cloud.agileframework.abstractbusiness.pojo.vo;
 
 import cloud.agileframework.common.annotation.Alias;
+import cloud.agileframework.common.constant.Constant;
 import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.validate.group.PageQuery;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
+import com.alibaba.druid.sql.ast.SQLObjectImpl;
 import com.alibaba.druid.sql.ast.SQLOrderBy;
 import com.alibaba.druid.sql.ast.SQLOrderingSpecification;
 import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
+import com.alibaba.druid.sql.ast.expr.SQLMethodInvokeExpr;
+import com.alibaba.druid.sql.ast.expr.SQLNumberExpr;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.expr.SQLQueryExpr;
 import com.alibaba.druid.sql.ast.statement.SQLSelect;
+import com.alibaba.druid.sql.ast.statement.SQLSelectItem;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
+import com.alibaba.druid.sql.ast.statement.SQLSelectQueryBlock;
 import com.alibaba.druid.sql.parser.ParserException;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import lombok.Data;
 import lombok.ToString;
 import org.springframework.data.domain.Sort;
 
 import javax.validation.constraints.NotNull;
-import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -68,20 +78,85 @@ public class BaseInParamVo implements IBaseInParamVo {
         SQLExpr expr = SQLUtils.toSQLExpr(sql, DbType.mysql);
         if (expr instanceof SQLQueryExpr) {
             SQLSelect subQuery = ((SQLQueryExpr) expr).getSubQuery();
-            SQLOrderBy orderBy = subQuery.getQueryBlock().getOrderBy();
+            SQLSelectQueryBlock queryBlock = subQuery.getQueryBlock();
+
+            List<SQLSelectItem> select = queryBlock.getSelectList();
+            Map<String, SQLSelectItem> aliasMap = Maps.newHashMap();
+            Map<String, SQLSelectItem> nameMap = Maps.newHashMap();
+            Map<String, SQLSelectItem> ownerMap = Maps.newHashMap();
+            select.forEach(a -> {
+
+                SQLExpr propertyExpr = a.getExpr();
+                String alias = a.getAlias();
+                if (alias != null) {
+                    aliasMap.put(alias, a);
+                }
+                if (propertyExpr instanceof SQLPropertyExpr) {
+
+                    String name = ((SQLPropertyExpr) propertyExpr).getName();
+                    String ownerName = ((SQLPropertyExpr) propertyExpr).getOwnerName();
+
+                    //解析有效名
+                    if (alias != null) {
+                        nameMap.put(name, a);
+                    }
+                    if (ownerName != null) {
+                        nameMap.put(name, a);
+                        ownerMap.put(ownerName + Constant.RegularAbout.SPOT + name, a);
+                    } else {
+                        nameMap.put(name, a);
+                    }
+                }
+
+            });
+
+            SQLOrderBy orderBy = queryBlock.getOrderBy();
             if (orderBy == null) {
                 orderBy = new SQLOrderBy();
-                subQuery.getQueryBlock().setOrderBy(orderBy);
+                queryBlock.setOrderBy(orderBy);
             }
 
-            for (SortInfo sortInfo : sortInfos) {
-                SQLSelectOrderByItem order = new SQLSelectOrderByItem(SQLUtils.toSQLExpr(sortInfo.getProperty()));
+            List<SQLSelectOrderByItem> items = orderBy.getItems();
+            Collections.reverse(items);
+            List<SQLSelectOrderByItem> cache = Lists.newArrayList(items);
+
+            Set<String> currentItems = items.stream().map(SQLObjectImpl::toString).collect(Collectors.toSet());
+            
+            for (int i =  0; i <sortInfos.size(); i++) {
+                SortInfo sortInfo = sortInfos.get(i);
+                String orderColumn = sortInfo.getProperty();
+                SQLSelectItem selectItem = aliasMap.get(orderColumn);
+                if (selectItem == null) {
+                    selectItem = ownerMap.get(orderColumn);
+                }
+                if (selectItem == null) {
+                    selectItem = nameMap.get(orderColumn);
+                }
+
+                String selectItemName = selectItem == null ? orderColumn : selectItem.getExpr().toString();
+              
+                String agileOrderColumnAlias = "agile_order_" + i;
+                if(currentItems.contains(agileOrderColumnAlias)){
+                    continue;
+                }
+                SQLSelectOrderByItem order = new SQLSelectOrderByItem(SQLUtils.toSQLExpr(agileOrderColumnAlias));
                 if (!(order.getExpr() instanceof SQLPropertyExpr) && !(order.getExpr() instanceof SQLIdentifierExpr)) {
                     throw new ParserException();
                 }
                 order.setType(sortInfo.isSort() ? SQLOrderingSpecification.ASC : SQLOrderingSpecification.DESC);
-                orderBy.addItem(order);
+
+                if (!aliasMap.containsKey(agileOrderColumnAlias)) {
+                    SQLMethodInvokeExpr ifNull = new SQLMethodInvokeExpr();
+                    ifNull.setMethodName("ifNull");
+                    ifNull.addArgument(SQLUtils.toSQLExpr(selectItemName));
+                    ifNull.addArgument(new SQLNumberExpr(sortInfo.isSort() ? 0 : 1));
+                    select.add(new SQLSelectItem(ifNull, agileOrderColumnAlias));
+                    cache.add(order);
+                }
             }
+            Collections.reverse(cache);
+            items.clear();
+            items.addAll(cache);
             return subQuery.toString();
         }
         return expr.toString();
