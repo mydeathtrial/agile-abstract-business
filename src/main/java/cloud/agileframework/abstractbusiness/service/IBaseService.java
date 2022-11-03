@@ -10,6 +10,7 @@ import cloud.agileframework.dictionary.AbstractDictionaryDataManager;
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.spring.util.BeanUtil;
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.ParameterizedType;
@@ -29,7 +30,12 @@ public interface IBaseService<E extends IBaseEntity, I extends BaseInParamVo, O 
     }
 
     default GenericService genericService() {
-        return BeanUtil.getBean(GenericService.class);
+        return GenericService.INSTANCE;
+    }
+    
+    @Autowired
+    default void setGenericService(GenericService genericService){
+        GenericService.INSTANCE =  genericService;
     }
 
     /**

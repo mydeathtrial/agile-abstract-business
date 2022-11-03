@@ -41,6 +41,8 @@ import java.util.SortedSet;
  * @since 1.0
  */
 public class GenericService {
+    
+    public static GenericService INSTANCE;
     private final BaseDao dao;
     private final ISecurityService security;
 
@@ -289,15 +291,14 @@ public class GenericService {
      */
     public <E extends IBaseEntity> void validateEntityExists(E pojo) throws EntityExistsException, TranslateException {
 
-        Dao dao = BeanUtil.getBean(Dao.class);
         Object id = null;
         if (pojo != null) {
-            id = dao.getId(pojo);
+            id = dao().getId(pojo);
         }
         if (id == null) {
             return;
         }
-        List<E> old = dao.findAllByArrayId((Class<E>) pojo.getClass(), id);
+        List<E> old = dao().findAllByArrayId((Class<E>) pojo.getClass(), id);
         if (old == null || old.isEmpty()) {
             throw new EntityExistsException(id + "");
         }
