@@ -10,4 +10,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ShowTextConfig extends ShowAbstractConfig {
+    @Override
+    public ShowType type() {
+        return ShowType.TEXT;
+    }
 }

@@ -1,6 +1,7 @@
 package cloud.agileframework.abstractbusiness.pojo.template.view.form.data;
 
 import cloud.agileframework.abstractbusiness.pojo.template.view.form.FormElementDataType;
+import com.alibaba.fastjson.JSON;
 import lombok.Data;
 
 /**
@@ -9,9 +10,14 @@ import lombok.Data;
 @Data
 public class ConstantFormElementData implements FormElementData {
     //值
-    private Object value;
+    private String value;
     @Override
     public FormElementDataType type() {
         return FormElementDataType.CONSTANT;
+    }
+
+    @Override
+    public Object data() {
+        return value==null?null:JSON.parse(value);
     }
 }

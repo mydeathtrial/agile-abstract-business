@@ -1,4 +1,4 @@
-package cloud.agileframework.abstractbusiness.pojo.template;
+package cloud.agileframework.abstractbusiness.pojo.template.function;
 
 public enum TemplateType {
     CONTAINER,

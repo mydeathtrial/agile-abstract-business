@@ -10,4 +10,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ShowLineConfig extends ShowAbstractConfig {
+    @Override
+    public ShowType type() {
+        return ShowType.LINE;
+    }
 }

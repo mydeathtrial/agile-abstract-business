@@ -1,16 +1,17 @@
 package cloud.agileframework.abstractbusiness.pojo.template.response;
 
 import cloud.agileframework.abstractbusiness.pojo.template.view.visualization.ShowConfig;
-import cloud.agileframework.abstractbusiness.pojo.template.view.visualization.ShowType;
+import lombok.Data;
+
+import java.io.Serializable;
 
 /**
  * 响应方式配置
  */
-public class FunctionResponse {
-    //响应结果的展示形式
-    private ShowType type;
+@Data
+public class FunctionResponse implements Serializable {
     //动作
     private Action action;
     //展示相关的配置
-    private ShowConfig config;
+    private ShowConfig show;
 }

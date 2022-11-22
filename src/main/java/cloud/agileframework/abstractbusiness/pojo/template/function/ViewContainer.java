@@ -1,4 +1,4 @@
-package cloud.agileframework.abstractbusiness.pojo.template;
+package cloud.agileframework.abstractbusiness.pojo.template.function;
 
 import cloud.agileframework.abstractbusiness.pojo.template.view.BaseViewElement;
 import lombok.Data;

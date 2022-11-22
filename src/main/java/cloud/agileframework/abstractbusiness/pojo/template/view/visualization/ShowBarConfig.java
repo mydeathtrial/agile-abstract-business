@@ -10,4 +10,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ShowBarConfig extends ShowAbstractConfig {
+    @Override
+    public ShowType type() {
+        return ShowType.BAR;
+    }
 }

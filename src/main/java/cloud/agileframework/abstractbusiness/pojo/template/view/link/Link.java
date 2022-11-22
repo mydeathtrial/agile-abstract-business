@@ -3,6 +3,7 @@ package cloud.agileframework.abstractbusiness.pojo.template.view.link;
 import cloud.agileframework.abstractbusiness.pojo.template.view.form.FormElement;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Map;
 
 
@@ -10,7 +11,7 @@ import java.util.Map;
  * 链接
  */
 @Data
-public class Link {
+public class Link implements Serializable {
     //链接地址
     private LinkType type;
     //链接内容，如具体地址、具体的api、路由等等

@@ -1,4 +1,4 @@
-package cloud.agileframework.abstractbusiness.pojo.template;
+package cloud.agileframework.abstractbusiness.pojo.template.function;
 
 import cloud.agileframework.abstractbusiness.pojo.template.view.BaseViewElement;
 import lombok.Data;
@@ -6,6 +6,6 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class Url extends BaseViewElement implements Template {
+public class Router extends BaseViewElement implements Template {
     private String value;
 }

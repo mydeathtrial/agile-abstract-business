@@ -10,4 +10,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ShowAlertConfig extends ShowAbstractConfig {
+    @Override
+    public ShowType type() {
+        return ShowType.ALERT;
+    }
 }

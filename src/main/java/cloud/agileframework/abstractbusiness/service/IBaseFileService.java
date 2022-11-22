@@ -49,6 +49,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -139,7 +140,6 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         }
 
         return RETURN.PARAMETER_ERROR;
-
     }
 
     @Data
@@ -179,15 +179,7 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
     }
 
     default void exportExcel(List<ProxyData<I>> proxyData) throws Exception {
-        Object templateFile = template();
-        Workbook workbook;
-        if (templateFile instanceof ResponseFile) {
-            workbook = POIUtil.readFile(((ResponseFile) templateFile).getFileName(), ((ResponseFile) templateFile).getInputStream());
-        } else if (templateFile instanceof ExcelFile) {
-            workbook = ((ExcelFile) templateFile).getWorkbook();
-        } else {
-            throw new AgileArgumentException("未找到合适的错误数据存储文件格式");
-        }
+        Workbook workbook = templateFile();
         Set<ClassUtil.Target<Excel>> annotations = ClassUtil.getAllFieldAnnotation(getInVoClass(), Excel.class);
         List<CellInfo> cellInfos = annotations.stream()
                 .map(IBaseFileService::getCellInfo)
@@ -255,11 +247,11 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
         return download(inParam);
     }
 
-    default ExcelFile download(I inParam) {
+    default ExcelFile download(I inParam) throws IOException {
         return download(inParam, getEntityClass(), getOutVoClass());
     }
 
-    default <J, T> ExcelFile download(I inParam, Class<J> queryBy, Class<T> outBy) {
+    default <J, T> ExcelFile download(I inParam, Class<J> queryBy, Class<T> outBy) throws IOException {
         String sql = parseOrder(inParam, listSql());
         List<T> list;
         if (sql != null) {
@@ -273,18 +265,16 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
                 .map(IBaseFileService::getCellInfo)
                 .collect(Collectors.toList());
 
-        Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).setData((JSONArray) JSON.toJSON(list)).build());
-
-        return new ExcelFile(fileName(), workbook);
+        return createExcel(list, cellInfos,fileName(),version());
     }
 
-    /**
-     * 列表查询
-     *
-     * @return 列表
-     */
-    @Mapping(value = {"${agile.base-service.template:/template}"}, method = {RequestMethod.GET, RequestMethod.POST})
-    default Object template() throws Exception {
+    static <T> ExcelFile createExcel(List<T> list, List<CellInfo> cellInfos,String fileName,POIUtil.VERSION version) throws IOException {
+        Workbook workbook = POIUtil.creatExcel(version, SheetData.builder().setCells(cellInfos).setData(list).build());
+        return new ExcelFile(fileName, workbook);
+    }
+
+    
+    default Workbook templateFile(){
         try {
             String filePath = templatePath();
             File file;
@@ -304,17 +294,24 @@ public interface IBaseFileService<E extends IBaseEntity, I extends BaseInParamVo
             if (!file.exists()) {
                 throw new NoSuchFileException(filePath);
             }
-            return new ResponseFile(file.getName(), file);
-        } catch (NoSuchFileException e) {
+            return POIUtil.readFile(file);
+        } catch (IOException e) {
             Set<ClassUtil.Target<Excel>> remarks = ClassUtil.getAllFieldAnnotation(getInVoClass(), Excel.class);
             List<CellInfo> cellInfos = remarks.stream()
                     .map(IBaseFileService::getCellInfo)
                     .collect(Collectors.toList());
 
-            Workbook workbook = POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).build());
-
-            return new ExcelFile(fileName(), workbook);
+            return POIUtil.creatExcel(version(), SheetData.builder().setCells(cellInfos).build());
         }
+    }
+    /**
+     * 列表查询
+     *
+     * @return 列表
+     */
+    @Mapping(value = {"${agile.base-service.template:/template}"}, method = {RequestMethod.GET, RequestMethod.POST})
+    default Object template() throws Exception {
+        return new ExcelFile(fileName(), templateFile());
     }
 
     /**

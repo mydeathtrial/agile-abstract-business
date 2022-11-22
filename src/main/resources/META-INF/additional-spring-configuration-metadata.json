@@ -3,7 +3,7 @@
     {
       "name": "agile.base-service.rootPath",
       "type": "java.lang.String",
-      "description": "保存."
+      "description": "树根节点parent值."
     },
     {
       "name": "agile.base-service.save",

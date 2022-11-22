@@ -7,5 +7,7 @@ public enum FormElementDataType {
     //sql语句
     SQL, 
     //静态变量
-    CONSTANT
+    CONSTANT,
+    DIC,
+    REF
 }

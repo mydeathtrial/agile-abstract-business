@@ -6,6 +6,7 @@ package cloud.agileframework.abstractbusiness.pojo.template.view.form;
 public enum FormElementType {
     //开关
     SWITCH,
+    DATE,
     //文本
     TEXT,
     //单选
@@ -22,6 +23,7 @@ public enum FormElementType {
     CHECKBOX,
     //进度滑块
     SLIDER,
-    //字典
-    DIC
+    TAG,
+    NUMBER,
+    UPLOAD
 }

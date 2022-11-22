@@ -4,6 +4,7 @@ import cloud.agileframework.abstractbusiness.controller.BaseBusinessService;
 import cloud.agileframework.abstractbusiness.service.GenericService;
 import cloud.agileframework.abstractbusiness.service.ISecurityService;
 import cloud.agileframework.abstractbusiness.service.SecurityService;
+import cloud.agileframework.abstractbusiness.service.TemplateEngin;
 import cloud.agileframework.jpa.config.DaoAutoConfiguration;
 import cloud.agileframework.jpa.dao.Dao;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -48,6 +49,11 @@ public class BusinessAutoConfiguration {
     @ConditionalOnBean(type = "cloud.agileframework.security.config.SecurityAutoConfiguration.class")
     public ISecurityService securityService() {
         return new SecurityService();
+    }
+    
+    @Bean
+    public TemplateEngin templateEngin(){
+        return new TemplateEngin();
     }
 
 }

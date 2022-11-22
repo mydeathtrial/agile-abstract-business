@@ -15,4 +15,8 @@ import java.util.List;
 public class ShowTreeConfig extends ShowAbstractConfig {
     private Link link;
     private List<Button> button;
+    @Override
+    public ShowType type() {
+        return ShowType.TREE;
+    }
 }

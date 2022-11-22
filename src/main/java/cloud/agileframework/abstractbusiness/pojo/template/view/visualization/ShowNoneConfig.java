@@ -8,7 +8,9 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ShowTemplateConfig extends ShowAbstractConfig {
-    //骨架结构
-    private String frame;
+public class ShowNoneConfig extends ShowAbstractConfig {
+    @Override
+    public ShowType type() {
+        return ShowType.NONE;
+    }
 }
